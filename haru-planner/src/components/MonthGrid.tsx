@@ -1,6 +1,8 @@
 import React, { memo, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { fromKey, monthGrid, todayKey, WEEKDAYS } from '../date';
+import { getHoliday, shortHoliday } from '../holidays';
 import { useTheme } from '../theme';
 import { tap } from './ui';
 
@@ -26,24 +28,33 @@ function MonthGridImpl({ year, month, selected, weekStart, onSelect, onMonthChan
     tap();
     onMonthChange(d.getFullYear(), d.getMonth());
   };
-  const rows = cells[35] && fromKey(cells[35]).getMonth() !== month ? 5 : 6;
+  const rows = fromKey(cells[35]).getMonth() !== month ? 5 : 6;
+  const isThisMonth = new Date().getFullYear() === year && new Date().getMonth() === month;
 
   return (
     <View>
       <View style={st.nav}>
-        <Pressable onPress={() => go(-1)} hitSlop={12} style={st.navBtn} accessibilityLabel="이전 달">
-          <Text style={{ color: t.text, fontSize: 22 }}>‹</Text>
+        <Text style={{ color: t.text, fontSize: 19, fontWeight: '800', letterSpacing: -0.4, flex: 1 }}>
+          {year}년 {month + 1}월
+        </Text>
+        {!isThisMonth && (
+          <Pressable
+            onPress={() => { tap(); const d = new Date(); onMonthChange(d.getFullYear(), d.getMonth()); onSelect(todayKey()); }}
+            style={[st.todayBtn, { backgroundColor: t.primarySoft }]}
+          >
+            <Text style={{ color: t.primary, fontWeight: '700', fontSize: 13 }}>오늘</Text>
+          </Pressable>
+        )}
+        <Pressable onPress={() => go(-1)} hitSlop={8} style={[st.navBtn, { backgroundColor: t.fill }]} accessibilityLabel="이전 달">
+          <Ionicons name="chevron-back" size={18} color={t.text} />
         </Pressable>
-        <Pressable onPress={() => { const d = new Date(); onMonthChange(d.getFullYear(), d.getMonth()); onSelect(todayKey()); }}>
-          <Text style={{ color: t.text, fontSize: 18, fontWeight: '800' }}>{year}년 {month + 1}월</Text>
-        </Pressable>
-        <Pressable onPress={() => go(1)} hitSlop={12} style={st.navBtn} accessibilityLabel="다음 달">
-          <Text style={{ color: t.text, fontSize: 22 }}>›</Text>
+        <Pressable onPress={() => go(1)} hitSlop={8} style={[st.navBtn, { backgroundColor: t.fill }]} accessibilityLabel="다음 달">
+          <Ionicons name="chevron-forward" size={18} color={t.text} />
         </Pressable>
       </View>
       <View style={st.row}>
         {days.map((d) => (
-          <Text key={d} style={[st.dow, { color: d === '일' ? t.danger : d === '토' ? t.primary : t.sub }]}>{d}</Text>
+          <Text key={d} style={[st.dow, { color: d === '일' ? t.holiday : d === '토' ? t.saturday : t.faint }]}>{d}</Text>
         ))}
       </View>
       {Array.from({ length: rows }).map((_, r) => (
@@ -53,17 +64,35 @@ function MonthGridImpl({ year, month, selected, weekStart, onSelect, onMonthChan
             const inMonth = d.getMonth() === month;
             const isSel = k === selected;
             const isToday = k === today;
+            const holiday = getHoliday(k);
             const dots = markers?.[k] ?? [];
             const dow = d.getDay();
-            const color = isSel ? t.onPrimary : !inMonth ? t.faint : dow === 0 ? t.danger : dow === 6 ? t.primary : t.text;
+            const red = holiday || dow === 0;
+            const color = isSel ? t.onPrimary : red ? t.holiday : dow === 6 ? t.saturday : t.text;
             return (
-              <Pressable key={k} style={[st.cell, { height: compact ? 42 : 52 }]} onPress={() => { tap(); onSelect(k); }}>
-                <View style={[st.dayCircle, isSel && { backgroundColor: t.primary }, !isSel && isToday && { borderWidth: 1.5, borderColor: t.primary }]}>
-                  <Text style={{ color, fontWeight: isToday || isSel ? '800' : '500', fontSize: 15, opacity: inMonth ? 1 : 0.6 }}>{d.getDate()}</Text>
+              <Pressable
+                key={k}
+                style={[st.cell, { height: compact ? 44 : 58, opacity: inMonth ? 1 : 0.32 }]}
+                onPress={() => { tap(); onSelect(k); }}
+                accessibilityLabel={`${d.getMonth() + 1}월 ${d.getDate()}일${holiday ? ' ' + holiday : ''}`}
+              >
+                <View style={[st.dayCircle, isSel && { backgroundColor: t.primary }, !isSel && isToday && { backgroundColor: t.primarySoft }]}>
+                  <Text style={{ color: !isSel && isToday ? t.primary : color, fontWeight: isToday || isSel ? '800' : '500', fontSize: 15 }}>
+                    {d.getDate()}
+                  </Text>
                 </View>
-                <View style={st.dots}>
-                  {dots.slice(0, 3).map((c, i) => <View key={i} style={[st.dot, { backgroundColor: c }]} />)}
-                </View>
+                {!compact && holiday ? (
+                  <Text numberOfLines={1} style={[st.holiday, { color: t.holiday }]}>{shortHoliday(holiday)}</Text>
+                ) : (
+                  <View style={st.dots}>
+                    {dots.slice(0, 3).map((c, i) => <View key={i} style={[st.dot, { backgroundColor: c }]} />)}
+                  </View>
+                )}
+                {!compact && holiday && dots.length > 0 ? (
+                  <View style={[st.dots, { marginTop: 1 }]}>
+                    {dots.slice(0, 3).map((c, i) => <View key={i} style={[st.dot, { backgroundColor: c }]} />)}
+                  </View>
+                ) : null}
               </Pressable>
             );
           })}
@@ -76,12 +105,14 @@ function MonthGridImpl({ year, month, selected, weekStart, onSelect, onMonthChan
 export const MonthGrid = memo(MonthGridImpl);
 
 const st = StyleSheet.create({
-  nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, paddingBottom: 10 },
-  navBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  nav: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 6, paddingBottom: 12 },
+  navBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  todayBtn: { height: 32, paddingHorizontal: 12, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row' },
-  dow: { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '700', paddingBottom: 6 },
+  dow: { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '600', paddingBottom: 6 },
   cell: { flex: 1, alignItems: 'center', paddingTop: 2 },
   dayCircle: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  dots: { flexDirection: 'row', gap: 3, marginTop: 2, height: 5 },
+  holiday: { fontSize: 9, fontWeight: '600', marginTop: 1, maxWidth: '96%' },
+  dots: { flexDirection: 'row', gap: 3, marginTop: 3, height: 5 },
   dot: { width: 5, height: 5, borderRadius: 3 },
 });

@@ -4,7 +4,8 @@ import { diffDays, formatDue, todayKey } from '../date';
 import { uid, useStore } from '../store';
 import { PALETTE, useTheme } from '../theme';
 import { Goal, Project, Task } from '../types';
-import { TaskItem } from '../components/TaskItem';
+import { positionOf, TaskItem } from '../components/TaskItem';
+import { Ionicons } from '@expo/vector-icons';
 import { useEditor } from '../components/TaskEditor';
 import { DatePickerSheet } from '../components/Pickers';
 import { Button, Card, Chip, Empty, Fab, Field, Label, Progress, ScreenHeader, Segmented, Sheet, tap } from '../components/ui';
@@ -70,7 +71,7 @@ function GoalForm({ initial, onClose }: { initial: Goal; onClose: () => void }) 
         <EmojiRow list={GOAL_EMOJI} value={g.emoji} onPick={(e) => setG({ ...g, emoji: e })} />
         <Label>목표일</Label>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Chip label={g.deadline ? `📅 ${formatDue(g.deadline)}` : '📅 날짜 선택'} active={!!g.deadline} onPress={() => setDateOpen(true)} />
+          <Chip icon="calendar-clear-outline" label={g.deadline ? formatDue(g.deadline) : '날짜 선택'} active={!!g.deadline} onPress={() => setDateOpen(true)} />
           {g.deadline ? <Chip label="없음" onPress={() => setG({ ...g, deadline: null })} /> : null}
         </View>
         <Button label={isNew ? '목표 만들기' : '저장'} disabled={!g.title.trim()} onPress={() => { saveGoal({ ...g, title: g.title.trim() }); onClose(); }} style={{ marginTop: 24 }} />
@@ -113,7 +114,7 @@ export function ProjectsScreen() {
     if (detail.kind === 'project') {
       const p = detail.id ? data.projects.find((x) => x.id === detail.id) : null;
       const tasks = data.tasks.filter((x) => x.projectId === detail.id);
-      return { title: p ? `${p.emoji} ${p.name}` : '📥 미분류', tasks, projectMap, edit: p ? () => { setDetail(null); setPForm(p); } : undefined, preset: { projectId: detail.id } };
+      return { title: p ? `${p.emoji} ${p.name}` : '미분류', tasks, projectMap, edit: p ? () => { setDetail(null); setPForm(p); } : undefined, preset: { projectId: detail.id } };
     }
     const g = data.goals.find((x) => x.id === detail.id);
     if (!g) return null;
@@ -129,37 +130,38 @@ export function ProjectsScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 110 }}>
         <ScreenHeader title={tab === 'projects' ? '프로젝트' : '목표'} />
         <View style={{ paddingHorizontal: 16, marginBottom: 14 }}>
-          <Segmented value={tab} onChange={setTab} options={[{ value: 'projects', label: '📁 프로젝트' }, { value: 'goals', label: '⭐ 목표' }]} />
+          <Segmented value={tab} onChange={setTab} options={[{ value: 'projects', label: '프로젝트' }, { value: 'goals', label: '목표' }]} />
         </View>
 
         {tab === 'projects' ? (
           <View style={{ paddingHorizontal: 16, gap: 10 }}>
             <Card onPress={() => setDetail({ kind: 'project', id: null })} style={st.rowCard}>
-              <Text style={{ fontSize: 24 }}>📥</Text>
+              <View style={[st.icon, { backgroundColor: t.fill }]}><Ionicons name="file-tray-outline" size={21} color={t.sub} /></View>
               <View style={{ flex: 1 }}>
                 <Text style={[st.cardTitle, { color: t.text }]}>미분류</Text>
                 <Text style={{ color: t.sub, fontSize: 13 }}>프로젝트 없는 할 일</Text>
               </View>
               <Text style={{ color: t.sub, fontWeight: '700' }}>{stats.inbox.open}</Text>
+              <Ionicons name="chevron-forward" size={18} color={t.faint} />
             </Card>
             {data.projects.map((p) => {
               const s = stats.projects[p.id];
               return (
                 <Card key={p.id} onPress={() => setDetail({ kind: 'project', id: p.id })} onLongPress={() => setPForm(p)}>
                   <View style={st.rowCard}>
-                    <View style={[st.icon, { backgroundColor: p.color + '22' }]}><Text style={{ fontSize: 22 }}>{p.emoji}</Text></View>
+                    <View style={[st.icon, { backgroundColor: p.color + (t.dark ? '2E' : '17') }]}><Text style={{ fontSize: 22 }}>{p.emoji}</Text></View>
                     <View style={{ flex: 1 }}>
                       <Text style={[st.cardTitle, { color: t.text }]}>{p.name}</Text>
                       <Text style={{ color: t.sub, fontSize: 13 }}>남은 일 {s.open}개 · 완료 {s.done}개</Text>
                     </View>
                     <Text style={{ color: p.color, fontWeight: '800' }}>{s.total ? Math.round((s.done / s.total) * 100) : 0}%</Text>
                   </View>
-                  <View style={{ marginTop: 12 }}><Progress value={s.total ? s.done / s.total : 0} color={p.color} height={6} /></View>
+                  <View style={{ marginTop: 14 }}><Progress value={s.total ? s.done / s.total : 0} color={p.color} height={5} /></View>
                 </Card>
               );
             })}
-            {data.projects.length === 0 && <Empty emoji="📁" title="프로젝트가 없어요" desc="할 일을 주제별로 묶어 관리해 보세요" />}
-            <Text style={{ color: t.faint, fontSize: 12, textAlign: 'center', marginTop: 4 }}>길게 누르면 편집할 수 있어요</Text>
+            {data.projects.length === 0 && <Empty icon="folder-open-outline" title="프로젝트가 없어요" desc="할 일을 주제별로 묶어 관리해 보세요" />}
+            <Text style={{ color: t.faint, fontSize: 12, textAlign: 'center', marginTop: 6 }}>길게 눌러 편집</Text>
           </View>
         ) : (
           <View style={{ paddingHorizontal: 16, gap: 10 }}>
@@ -169,7 +171,7 @@ export function ProjectsScreen() {
               return (
                 <Card key={g.id} onPress={() => setDetail({ kind: 'goal', id: g.id })} onLongPress={() => setGForm(g)}>
                   <View style={st.rowCard}>
-                    <View style={[st.icon, { backgroundColor: t.primarySoft }]}><Text style={{ fontSize: 22 }}>{g.emoji}</Text></View>
+                    <View style={[st.icon, { backgroundColor: t.primarySoft }]}><Text style={{ fontSize: 21 }}>{g.emoji}</Text></View>
                     <View style={{ flex: 1 }}>
                       <Text style={[st.cardTitle, { color: t.text }]}>{g.title}</Text>
                       <Text style={{ color: left !== null && left < 0 ? t.danger : t.sub, fontSize: 13 }}>
@@ -178,11 +180,11 @@ export function ProjectsScreen() {
                     </View>
                     <Text style={{ color: t.primary, fontWeight: '800', fontSize: 16 }}>{s.total ? Math.round((s.done / s.total) * 100) : 0}%</Text>
                   </View>
-                  <View style={{ marginTop: 12 }}><Progress value={s.total ? s.done / s.total : 0} /></View>
+                  <View style={{ marginTop: 14 }}><Progress value={s.total ? s.done / s.total : 0} height={5} /></View>
                 </Card>
               );
             })}
-            {data.goals.length === 0 && <Empty emoji="🎯" title="목표를 세워 보세요" desc="할 일을 목표에 연결하면 진행률이 자동으로 계산돼요" />}
+            {data.goals.length === 0 && <Empty icon="flag-outline" title="목표를 세워 보세요" desc="할 일을 목표에 연결하면 진행률이 자동으로 계산돼요" />}
           </View>
         )}
       </ScrollView>
@@ -198,21 +200,24 @@ export function ProjectsScreen() {
         right={detailInfo?.edit ? <Pressable onPress={detailInfo.edit} hitSlop={10}><Text style={{ color: t.primary, fontSize: 16 }}>편집</Text></Pressable> : undefined}>
         {detailInfo && (
           <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-            {detailInfo.tasks.filter((x) => !x.done).map((x) => (
-              <TaskItem key={x.id} task={x} project={x.projectId ? detailInfo.projectMap[x.projectId] : undefined} onToggle={toggleTask}
+            {detailInfo.tasks.filter((x) => !x.done).map((x, i, arr) => (
+              <TaskItem key={x.id} task={x} position={positionOf(i, arr.length)} project={x.projectId ? detailInfo.projectMap[x.projectId] : undefined} onToggle={toggleTask}
                 onPress={openTask} onLongPress={quickMenu} />
             ))}
-            {detailInfo.tasks.every((x) => x.done) && <Empty emoji="✨" title="남은 할 일이 없어요" />}
+            {detailInfo.tasks.every((x) => x.done) && <Empty icon="sparkles-outline" title="남은 할 일이 없어요" />}
             <View style={{ paddingHorizontal: 16, gap: 10, marginTop: 8 }}>
-              <Button label="+ 할 일 추가" kind="ghost" onPress={() => openTask(detailInfo.preset)} />
+              <Button label="할 일 추가" icon="add" kind="ghost" onPress={() => openTask(detailInfo.preset)} />
               {detailInfo.tasks.some((x) => x.done) && (
                 <Pressable onPress={() => setShowDone(!showDone)} style={{ paddingVertical: 8 }}>
-                  <Text style={{ color: t.sub, fontWeight: '700' }}>{showDone ? '▾' : '▸'} 완료된 항목 {detailInfo.tasks.filter((x) => x.done).length}개</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons name={showDone ? 'chevron-down' : 'chevron-forward'} size={15} color={t.sub} />
+                    <Text style={{ color: t.sub, fontWeight: '700' }}>완료된 항목 {detailInfo.tasks.filter((x) => x.done).length}개</Text>
+                  </View>
                 </Pressable>
               )}
             </View>
-            {showDone && detailInfo.tasks.filter((x) => x.done).map((x) => (
-              <TaskItem key={x.id} task={x} onToggle={toggleTask} onPress={openTask} />
+            {showDone && detailInfo.tasks.filter((x) => x.done).map((x, i, arr) => (
+              <TaskItem key={x.id} task={x} position={positionOf(i, arr.length)} onToggle={toggleTask} onPress={openTask} />
             ))}
           </ScrollView>
         )}
@@ -223,7 +228,7 @@ export function ProjectsScreen() {
 
 const st = StyleSheet.create({
   rowCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  icon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
-  emoji: { width: 44, height: 44, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  emoji: { width: 46, height: 46, borderRadius: 14, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 });

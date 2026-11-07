@@ -1,5 +1,6 @@
 import { fromKey, monthGrid, todayKey, WEEKDAYS } from '../date';
 import { AppData } from '../types';
+import { getHoliday } from '../holidays';
 
 export const WIDGET_NAME = 'HaruCalendar';
 export const WIDGET_OFFSET_KEY = 'haru_widget_month_offset';
@@ -15,6 +16,7 @@ export interface WidgetCell {
   /** 완료한 할 일 수 */
   done: number;
   hasNote: boolean;
+  holiday: boolean;
 }
 
 export interface WidgetModel {
@@ -23,7 +25,7 @@ export interface WidgetModel {
   offset: number;
   weekdays: string[];
   rows: WidgetCell[][];
-  today: { key: string; label: string; tasks: { title: string; time: string | null; done: boolean }[]; open: number };
+  today: { key: string; label: string; holiday: string | null; tasks: { title: string; time: string | null; done: boolean }[]; open: number };
 }
 
 export function buildWidgetModel(data: AppData | null, offset: number): WidgetModel {
@@ -50,7 +52,7 @@ export function buildWidgetModel(data: AppData | null, offset: number): WidgetMo
   for (let r = 0; r < rowCount; r++) {
     rows.push(cells.slice(r * 7, r * 7 + 7).map((k) => {
       const d = fromKey(k);
-      return { key: k, day: d.getDate(), inMonth: d.getMonth() === month, isToday: k === today, dow: d.getDay(), open: open[k] ?? 0, done: done[k] ?? 0, hasNote: notes.has(k) };
+      return { key: k, day: d.getDate(), inMonth: d.getMonth() === month, isToday: k === today, dow: d.getDay(), open: open[k] ?? 0, done: done[k] ?? 0, hasNote: notes.has(k), holiday: !!getHoliday(k) };
     }));
   }
 
@@ -68,6 +70,7 @@ export function buildWidgetModel(data: AppData | null, offset: number): WidgetMo
     today: {
       key: today,
       label: `${base.getMonth() + 1}월 ${base.getDate()}일 (${WEEKDAYS[base.getDay()]})`,
+      holiday: getHoliday(today),
       tasks: todayTasks,
       open: todayTasks.filter((t) => !t.done).length,
     },

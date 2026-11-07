@@ -20,7 +20,7 @@ export function DatePickerSheet({ visible, value, weekStart, onClose, onPick }: 
   return (
     <Sheet visible={visible} onClose={onClose} title="날짜 선택" right={
       <Pressable onPress={() => { onPick(null); onClose(); }} hitSlop={10}>
-        <Text style={{ color: t.danger, fontSize: 16 }}>지우기</Text>
+        <Text style={{ color: t.danger, fontSize: 15, fontWeight: '600' }}>지우기</Text>
       </Pressable>
     }>
       <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
@@ -57,7 +57,7 @@ export function TimePickerSheet({ visible, value, onClose, onPick }: {
   }, [visible, value]);
 
   const Cell = ({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) => (
-    <Pressable onPress={() => { tap(); onPress(); }} style={[st.cell, { backgroundColor: on ? t.primary : t.bg }]}>
+    <Pressable onPress={() => { tap(); onPress(); }} style={[st.cell, { backgroundColor: on ? t.primary : t.fill }]}>
       <Text style={{ color: on ? t.onPrimary : t.text, fontWeight: on ? '800' : '500', fontSize: 16 }}>{label}</Text>
     </Pressable>
   );
@@ -65,7 +65,7 @@ export function TimePickerSheet({ visible, value, onClose, onPick }: {
   return (
     <Sheet visible={visible} onClose={onClose} title="시간 선택" right={
       <Pressable onPress={() => { onPick(null); onClose(); }} hitSlop={10}>
-        <Text style={{ color: t.danger, fontSize: 16 }}>지우기</Text>
+        <Text style={{ color: t.danger, fontSize: 15, fontWeight: '600' }}>지우기</Text>
       </Pressable>
     }>
       <View style={{ paddingHorizontal: 20 }}>

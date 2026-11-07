@@ -6,13 +6,13 @@ import { WidgetModel } from './model';
 
 const LIGHT = {
   bg: '#FFFFFF' as HexColor, text: '#181A23' as HexColor, sub: '#676B7E' as HexColor, faint: '#B9BCC9' as HexColor,
-  primary: '#4F5BD5' as HexColor, onPrimary: '#FFFFFF' as HexColor, soft: '#EEF0FC' as HexColor,
-  danger: '#E5484D' as HexColor, blue: '#4F5BD5' as HexColor, warn: '#E8930C' as HexColor, line: '#ECEDF3' as HexColor,
+  primary: '#4263EB' as HexColor, onPrimary: '#FFFFFF' as HexColor, soft: '#EDF1FE' as HexColor,
+  danger: '#E03131' as HexColor, blue: '#4263EB' as HexColor, warn: '#E8930C' as HexColor, line: '#ECEDF3' as HexColor,
 };
 const DARK: typeof LIGHT = {
-  bg: '#181A22' as HexColor, text: '#F0F1F6' as HexColor, sub: '#9DA1B4' as HexColor, faint: '#545869' as HexColor,
-  primary: '#8A93F7' as HexColor, onPrimary: '#0E0F14' as HexColor, soft: '#252846' as HexColor,
-  danger: '#FF6B70' as HexColor, blue: '#8A93F7' as HexColor, warn: '#F5A524' as HexColor, line: '#2A2D3A' as HexColor,
+  bg: '#15161B' as HexColor, text: '#F0F1F6' as HexColor, sub: '#9DA1B4' as HexColor, faint: '#545869' as HexColor,
+  primary: '#7C93FF' as HexColor, onPrimary: '#0E0F14' as HexColor, soft: '#252846' as HexColor,
+  danger: '#FF6B70' as HexColor, blue: '#7C93FF' as HexColor, warn: '#F5A524' as HexColor, line: '#2A2D3A' as HexColor,
 };
 
 const uri = (path: string) => ({ clickAction: 'OPEN_URI', clickActionData: { uri: `haruplanner://${path}` } });
@@ -65,7 +65,7 @@ export function CalendarWidget({ model, dark, width, height }: { model: WidgetMo
         {model.rows.map((row, ri) => (
           <FlexWidget key={ri} style={{ width: 'match_parent', flex: 1, flexDirection: 'row' }}>
             {row.map((cell) => {
-              const color: HexColor = cell.isToday ? c.onPrimary : !cell.inMonth ? c.faint : cell.dow === 0 ? c.danger : cell.dow === 6 ? c.blue : c.text;
+              const color: HexColor = cell.isToday ? c.onPrimary : !cell.inMonth ? c.faint : (cell.dow === 0 || cell.holiday) ? c.danger : cell.dow === 6 ? c.blue : c.text;
               const dot: HexColor | null = cell.open > 0 ? (cell.inMonth ? c.primary : c.faint) : cell.hasNote ? c.warn : cell.done > 0 ? c.faint : null;
               return (
                 <FlexWidget key={cell.key} {...uri(`calendar?date=${cell.key}`)} style={{ flex: 1, height: 'match_parent', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
@@ -84,7 +84,7 @@ export function CalendarWidget({ model, dark, width, height }: { model: WidgetMo
       {showToday ? (
         <FlexWidget {...uri('tasks')} style={{ width: 'match_parent', flexDirection: 'column', marginTop: 6, paddingTop: 8, borderTopWidth: 1, borderTopColor: c.line }}>
           <TextWidget
-            text={`오늘 ${model.today.label} · 남은 일 ${model.today.open}개`}
+            text={`오늘 ${model.today.label}${model.today.holiday ? ' ' + model.today.holiday : ''} · 남은 일 ${model.today.open}개`}
             style={{ fontSize: 12, fontWeight: '700', color: c.sub, marginBottom: 4 }}
           />
           {model.today.tasks.length === 0 ? (

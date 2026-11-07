@@ -6,6 +6,7 @@ import { PRIORITY_LABEL, priorityColor, useTheme } from '../theme';
 import { Priority, Repeat, Task } from '../types';
 import { DatePickerSheet, TimePickerSheet } from './Pickers';
 import { Button, Chip, ChipRow, Field, Label, Sheet } from './ui';
+import { Ionicons } from '@expo/vector-icons';
 import { requestPermission } from '../notify';
 
 const REPEATS: { v: Repeat; l: string }[] = [
@@ -90,13 +91,14 @@ function Editor({ initial, onClose }: { initial: Task; onClose: () => void }) {
         />
         <Field value={task.note} onChangeText={(v) => set('note', v)} placeholder="메모 추가" multiline style={{ minHeight: 60, textAlignVertical: 'top' }} />
 
-        <Label>날짜</Label>
+        <Label icon="calendar-clear-outline">날짜</Label>
         <ChipRow>
           <Chip label="오늘" active={task.due === today} onPress={() => set('due', today)} />
           <Chip label="내일" active={task.due === addDays(today, 1)} onPress={() => set('due', addDays(today, 1))} />
           <Chip label="다음 주" active={task.due === nextMon} onPress={() => set('due', nextMon)} />
           <Chip
-            label={task.due && ![today, addDays(today, 1), nextMon].includes(task.due) ? formatDue(task.due) : '📅 직접 선택'}
+            icon="calendar-outline"
+            label={task.due && ![today, addDays(today, 1), nextMon].includes(task.due) ? formatDue(task.due) : '직접 선택'}
             active={!!task.due && ![today, addDays(today, 1), nextMon].includes(task.due)}
             onPress={() => setDateOpen(true)}
           />
@@ -104,16 +106,20 @@ function Editor({ initial, onClose }: { initial: Task; onClose: () => void }) {
         </ChipRow>
 
         <View style={st.rowBetween}>
-          <Pressable style={[st.pill, { backgroundColor: t.bg, borderColor: t.border }]} onPress={() => setTimeOpen(true)}>
-            <Text style={{ color: task.time ? t.text : t.sub, fontSize: 15 }}>🕐 {task.time ? formatTime(task.time) : '시간 추가'}</Text>
+          <Pressable style={[st.pill, { backgroundColor: t.fill }]} onPress={() => setTimeOpen(true)}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Ionicons name="time-outline" size={18} color={task.time ? t.primary : t.sub} />
+              <Text style={{ color: task.time ? t.text : t.sub, fontSize: 15, fontWeight: task.time ? '600' : '400' }}>{task.time ? formatTime(task.time) : '시간 추가'}</Text>
+            </View>
           </Pressable>
-          <View style={[st.pill, { backgroundColor: t.bg, borderColor: t.border, flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
-            <Text style={{ color: t.text, fontSize: 15 }}>🔔 알림</Text>
+          <View style={[st.pill, { backgroundColor: t.fill, flexDirection: 'row', alignItems: 'center', gap: 8 }]}>
+            <Ionicons name="notifications-outline" size={18} color={task.remind ? t.primary : t.sub} />
+            <Text style={{ color: t.text, fontSize: 15, flex: 1 }}>알림</Text>
             <Switch value={task.remind} onValueChange={toggleRemind} trackColor={{ true: t.primary, false: t.border }} thumbColor="#fff" />
           </View>
         </View>
 
-        <Label>반복</Label>
+        <Label icon="repeat">반복</Label>
         <ChipRow>
           {REPEATS.map((r) => <Chip key={r.v} label={r.l} active={task.repeat === r.v} onPress={() => {
             set('repeat', r.v);
@@ -121,14 +127,14 @@ function Editor({ initial, onClose }: { initial: Task; onClose: () => void }) {
           }} />)}
         </ChipRow>
 
-        <Label>우선순위</Label>
+        <Label icon="flag-outline">우선순위</Label>
         <ChipRow>
           {([3, 2, 1, 0] as Priority[]).map((p) => (
-            <Chip key={p} label={(p ? '● ' : '') + PRIORITY_LABEL[p]} color={priorityColor(t, p)} active={task.priority === p} onPress={() => set('priority', p)} />
+            <Chip key={p} icon={p ? 'flag' : undefined} label={PRIORITY_LABEL[p]} color={priorityColor(t, p)} active={task.priority === p} onPress={() => set('priority', p)} />
           ))}
         </ChipRow>
 
-        <Label>프로젝트</Label>
+        <Label icon="folder-open-outline">프로젝트</Label>
         <ChipRow>
           <Chip label="없음" active={!task.projectId} onPress={() => set('projectId', null)} />
           {data.projects.map((p) => (
@@ -138,7 +144,7 @@ function Editor({ initial, onClose }: { initial: Task; onClose: () => void }) {
 
         {data.goals.length > 0 && (
           <>
-            <Label>목표 연결</Label>
+            <Label icon="trophy-outline">목표 연결</Label>
             <ChipRow>
               <Chip label="없음" active={!task.goalId} onPress={() => set('goalId', null)} />
               {data.goals.map((g) => (
@@ -148,15 +154,15 @@ function Editor({ initial, onClose }: { initial: Task; onClose: () => void }) {
           </>
         )}
 
-        <Label>세부 항목 {task.subtasks.length ? `(${task.subtasks.filter((s) => s.done).length}/${task.subtasks.length})` : ''}</Label>
+        <Label icon="list">세부 항목 {task.subtasks.length ? `(${task.subtasks.filter((s) => s.done).length}/${task.subtasks.length})` : ''}</Label>
         {task.subtasks.map((s) => (
           <View key={s.id} style={[st.sub, { borderColor: t.border }]}>
             <Pressable
               hitSlop={8}
               onPress={() => set('subtasks', task.subtasks.map((x) => (x.id === s.id ? { ...x, done: !x.done } : x)))}
-              style={[st.subCheck, { borderColor: s.done ? t.success : t.faint, backgroundColor: s.done ? t.success : 'transparent' }]}
+              style={[st.subCheck, { borderColor: s.done ? t.primary : t.faint, backgroundColor: s.done ? t.primary : 'transparent' }]}
             >
-              {s.done ? <Text style={{ color: '#fff', fontSize: 11, fontWeight: '900' }}>✓</Text> : null}
+              {s.done ? <Ionicons name="checkmark" size={13} color={t.onPrimary} /> : null}
             </Pressable>
             <TextInput
               value={s.title}
@@ -165,13 +171,13 @@ function Editor({ initial, onClose }: { initial: Task; onClose: () => void }) {
               style={{ flex: 1, color: s.done ? t.faint : t.text, fontSize: 15, textDecorationLine: s.done ? 'line-through' : 'none', paddingVertical: 4 }}
             />
             <Pressable hitSlop={10} onPress={() => set('subtasks', task.subtasks.filter((x) => x.id !== s.id))}>
-              <Text style={{ color: t.faint, fontSize: 18 }}>✕</Text>
+              <Ionicons name="close" size={18} color={t.faint} />
             </Pressable>
           </View>
         ))}
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Field value={subDraft} onChangeText={setSubDraft} placeholder="세부 항목 추가" onFocus={revealBottom} onSubmitEditing={addSub} returnKeyType="done" blurOnSubmit={false} style={{ flex: 1 }} />
-          <Button label="추가" kind="ghost" onPress={addSub} style={{ height: 48 }} />
+          <Button label="추가" kind="ghost" onPress={addSub} style={{ height: 48, paddingHorizontal: 16 }} />
         </View>
 
         <Button label={isNew ? '할 일 추가' : '저장'} onPress={save} style={{ marginTop: 24 }} />
@@ -232,9 +238,9 @@ export const useEditor = () => {
 };
 
 const st = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: '700', paddingVertical: 12 },
+  title: { fontSize: 22, fontWeight: '700', letterSpacing: -0.4, paddingVertical: 10, marginBottom: 6 },
   rowBetween: { flexDirection: 'row', gap: 10, marginTop: 12 },
-  pill: { flex: 1, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, minHeight: 48, justifyContent: 'center' },
+  pill: { flex: 1, borderRadius: 12, paddingHorizontal: 14, minHeight: 48, justifyContent: 'center' },
   sub: { flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 6, marginBottom: 4 },
   subCheck: { width: 20, height: 20, borderRadius: 6, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
 });

@@ -2,10 +2,11 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 import { Alert, FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { formatDue } from '../date';
 import { uid, useStore } from '../store';
-import { NOTE_COLORS, NOTE_COLORS_DARK, useTheme } from '../theme';
+import { NOTE_COLORS, noteBg, useTheme } from '../theme';
+import { Ionicons } from '@expo/vector-icons';
 import { Note } from '../types';
 import { DatePickerSheet } from '../components/Pickers';
-import { Button, Chip, Empty, Fab, Field, ScreenHeader, Sheet, tap } from '../components/ui';
+import { Button, Chip, Empty, Fab, ScreenHeader, SearchField, Sheet, tap } from '../components/ui';
 
 const NoteCtx = createContext<(n?: Partial<Note>) => void>(() => {});
 export const useNoteEditor = () => useContext(NoteCtx);
@@ -16,7 +17,7 @@ function NoteEditor({ initial, onClose }: { initial: Note; onClose: () => void }
   const [n, setN] = useState(initial);
   const [dateOpen, setDateOpen] = useState(false);
   const isNew = !data.notes.some((x) => x.id === n.id);
-  const bg = t.dark ? NOTE_COLORS_DARK[n.color] ?? t.card : n.color;
+  const bg = noteBg(t, n.color);
 
   const save = () => {
     if (!n.title.trim() && !n.body.trim()) { onClose(); return; }
@@ -41,12 +42,12 @@ function NoteEditor({ initial, onClose }: { initial: Note; onClose: () => void }
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
           {NOTE_COLORS.map((c) => (
             <Pressable key={c} onPress={() => { tap(); setN({ ...n, color: c }); }}
-              style={[st.swatch, { backgroundColor: t.dark ? NOTE_COLORS_DARK[c] : c, borderColor: n.color === c ? t.primary : t.border, borderWidth: n.color === c ? 3 : 1 }]} />
+              style={[st.swatch, { backgroundColor: noteBg(t, c), borderColor: noteBg(t, n.color) === noteBg(t, c) ? t.primary : t.border, borderWidth: noteBg(t, n.color) === noteBg(t, c) ? 2.5 : 1 }]} />
           ))}
         </View>
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-          <Chip label={n.date ? `📅 ${formatDue(n.date)}` : '📅 날짜 연결'} active={!!n.date} onPress={() => setDateOpen(true)} />
-          <Chip label={n.pinned ? '📌 고정됨' : '📌 고정'} active={n.pinned} onPress={() => setN({ ...n, pinned: !n.pinned })} />
+          <Chip icon="calendar-clear-outline" label={n.date ? formatDue(n.date) : '날짜 연결'} active={!!n.date} onPress={() => setDateOpen(true)} />
+          <Chip icon={n.pinned ? 'pin' : 'pin-outline'} label={n.pinned ? '고정됨' : '고정'} active={n.pinned} onPress={() => setN({ ...n, pinned: !n.pinned })} />
         </View>
         <Button label="저장" onPress={save} style={{ marginTop: 24 }} />
         {!isNew && <Button label="삭제" kind="danger" onPress={remove} style={{ marginTop: 10 }} />}
@@ -98,23 +99,23 @@ export function NotesScreen() {
           <View>
             <ScreenHeader title="메모" subtitle={`${data.notes.length}개의 메모`} />
             <View style={{ paddingHorizontal: 16 }}>
-              <Field value={q} onChangeText={setQ} placeholder="🔍 메모 검색" style={{ paddingVertical: 10 }} />
+              <SearchField value={q} onChangeText={setQ} placeholder="메모 검색" />
             </View>
           </View>
         }
         renderItem={({ item: n }) => (
-          <Pressable onPress={() => open(n)} style={({ pressed }) => [st.note, { backgroundColor: t.dark ? NOTE_COLORS_DARK[n.color] ?? t.card : n.color, opacity: pressed ? 0.85 : 1 }]}>
+          <Pressable onPress={() => open(n)} style={({ pressed }) => [st.note, { backgroundColor: noteBg(t, n.color), opacity: pressed ? 0.85 : 1 }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 4 }}>
               <Text style={{ color: t.text, fontWeight: '800', fontSize: 15, flex: 1 }} numberOfLines={2}>{n.title || '제목 없음'}</Text>
-              {n.pinned ? <Text>📌</Text> : null}
+              {n.pinned ? <Ionicons name="pin" size={14} color={t.sub} /> : null}
             </View>
             <Text style={{ color: t.sub, fontSize: 13, marginTop: 6, lineHeight: 19 }} numberOfLines={6}>{n.body}</Text>
             <Text style={{ color: t.faint, fontSize: 11, marginTop: 'auto', paddingTop: 8 }}>
-              {n.date ? `📅 ${formatDue(n.date)}` : new Date(n.updatedAt).toLocaleDateString('ko-KR')}
+              {n.date ? formatDue(n.date) : new Date(n.updatedAt).toLocaleDateString('ko-KR')}
             </Text>
           </Pressable>
         )}
-        ListEmptyComponent={<Empty emoji="🗒" title={q ? '검색 결과가 없어요' : '메모가 없어요'} desc="떠오르는 생각을 바로 적어 두세요" />}
+        ListEmptyComponent={<Empty icon="document-text-outline" title={q ? '검색 결과가 없어요' : '메모가 없어요'} desc="떠오르는 생각을 바로 적어 두세요" />}
       />
       <Fab onPress={() => open({})} />
     </View>
@@ -122,7 +123,7 @@ export function NotesScreen() {
 }
 
 const st = StyleSheet.create({
-  swatch: { width: 36, height: 36, borderRadius: 18 },
-  note: { flex: 1, minHeight: 150, borderRadius: 16, padding: 14, maxWidth: '48.6%' },
+  swatch: { width: 34, height: 34, borderRadius: 17 },
+  note: { flex: 1, minHeight: 150, borderRadius: 18, padding: 15, maxWidth: '48.6%' },
 });
 

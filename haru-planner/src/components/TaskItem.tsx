@@ -1,76 +1,100 @@
 import React, { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { formatDue, todayKey } from '../date';
+import { Ionicons } from '@expo/vector-icons';
+import { formatDue, formatTime, todayKey } from '../date';
 import { priorityColor, useTheme } from '../theme';
 import { Goal, Project, Task } from '../types';
-import { tap } from './ui';
+import { IconName, tap } from './ui';
 
 const REPEAT_LABEL: Record<string, string> = { daily: '매일', weekdays: '평일', weekly: '매주', monthly: '매월' };
 
-function TaskItemImpl({ task, project, goal, onToggle, onPress, onLongPress, hideDate }: {
+export type RowPosition = 'single' | 'first' | 'middle' | 'last';
+export const positionOf = (index: number, length: number): RowPosition =>
+  length === 1 ? 'single' : index === 0 ? 'first' : index === length - 1 ? 'last' : 'middle';
+
+function Meta({ icon, text, color }: { icon?: IconName; text: string; color: string }) {
+  return (
+    <View style={st.metaItem}>
+      {icon ? <Ionicons name={icon} size={12} color={color} /> : null}
+      {text ? <Text style={{ color, fontSize: 12, fontWeight: '500' }}>{text}</Text> : null}
+    </View>
+  );
+}
+
+function TaskItemImpl({ task, project, goal, onToggle, onPress, onLongPress, hideDate, position = 'single' }: {
   task: Task; project?: Project; goal?: Goal; onToggle: (id: string) => void; onPress: (t: Task) => void;
-  onLongPress?: (t: Task) => void; hideDate?: boolean;
+  onLongPress?: (t: Task) => void; hideDate?: boolean; position?: RowPosition;
 }) {
   const t = useTheme();
   const pc = priorityColor(t, task.priority);
   const overdue = !task.done && task.due !== null && task.due < todayKey();
   const subDone = task.subtasks.filter((s) => s.done).length;
-  const meta: { text: string; color?: string }[] = [];
-  if (task.due && !hideDate) meta.push({ text: formatDue(task.due, task.time), color: overdue ? t.danger : undefined });
-  else if (task.time && hideDate) meta.push({ text: formatDue(todayKey(), task.time).replace('오늘 ', '') });
-  if (task.repeat !== 'none') meta.push({ text: '↻ ' + REPEAT_LABEL[task.repeat] });
-  if (task.remind) meta.push({ text: '🔔' });
-  if (task.subtasks.length) meta.push({ text: `☑ ${subDone}/${task.subtasks.length}` });
-  if (task.note) meta.push({ text: '📝' });
+  const top = position === 'single' || position === 'first';
+  const bottom = position === 'single' || position === 'last';
 
   return (
-    <Pressable
-      onPress={() => onPress(task)}
-      onLongPress={onLongPress ? () => { tap(); onLongPress(task); } : undefined}
-      style={({ pressed }) => [st.row, { backgroundColor: pressed ? t.primarySoft : t.card, borderColor: t.border }]}
-    >
+    <View style={[st.wrap, { marginBottom: bottom ? 10 : 0 }]}>
       <Pressable
-        onPress={() => { tap(); onToggle(task.id); }}
-        hitSlop={10}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: task.done }}
-        style={[st.check, { borderColor: task.done ? t.success : pc, backgroundColor: task.done ? t.success : 'transparent' }]}
+        onPress={() => onPress(task)}
+        onLongPress={onLongPress ? () => { tap(); onLongPress(task); } : undefined}
+        style={({ pressed }) => [
+          st.row,
+          { backgroundColor: pressed ? t.fill : t.card },
+          top && st.top,
+          bottom && st.bottom,
+        ]}
       >
-        {task.done ? <Text style={{ color: '#fff', fontSize: 14, fontWeight: '900' }}>✓</Text> : null}
-      </Pressable>
-      <View style={{ flex: 1 }}>
-        <Text
-          numberOfLines={2}
-          style={{ color: task.done ? t.faint : t.text, fontSize: 16, fontWeight: '600', textDecorationLine: task.done ? 'line-through' : 'none' }}
+        <Pressable
+          onPress={() => { tap(); onToggle(task.id); }}
+          hitSlop={12}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: task.done }}
+          accessibilityLabel={task.title}
+          style={[st.check, { borderColor: task.done ? t.primary : task.priority ? pc : t.faint, backgroundColor: task.done ? t.primary : 'transparent' }]}
         >
-          {task.title}
-        </Text>
-        {(meta.length > 0 || project || goal) && (
-          <View style={st.meta}>
-            {meta.map((m, i) => (
-              <Text key={i} style={{ color: m.color ?? t.sub, fontSize: 12, fontWeight: m.color ? '700' : '500' }}>{m.text}</Text>
-            ))}
-            {goal ? <Text style={{ color: t.sub, fontSize: 12 }}>{goal.emoji} {goal.title}</Text> : null}
+          {task.done ? <Ionicons name="checkmark" size={14} color={t.onPrimary} /> : null}
+        </Pressable>
+        <View style={[st.body, !bottom && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.separator }]}>
+          <View style={{ flex: 1 }}>
+            <Text
+              numberOfLines={2}
+              style={{ color: task.done ? t.faint : t.text, fontSize: 15.5, fontWeight: '500', lineHeight: 21, textDecorationLine: task.done ? 'line-through' : 'none' }}
+            >
+              {task.title}
+            </Text>
+            <View style={[st.meta, !(task.due && !hideDate) && !(task.time && hideDate) && task.repeat === 'none' && !task.subtasks.length && !task.remind && !task.note && !project && !goal && { marginTop: 0 }]}>
+              {task.due && !hideDate ? <Meta icon="calendar-clear-outline" text={formatDue(task.due, task.time)} color={overdue ? t.danger : t.sub} /> : null}
+              {task.time && hideDate ? <Meta icon="time-outline" text={formatTime(task.time)} color={t.sub} /> : null}
+              {task.repeat !== 'none' ? <Meta icon="repeat" text={REPEAT_LABEL[task.repeat]} color={t.sub} /> : null}
+              {task.subtasks.length ? <Meta icon="list" text={`${subDone}/${task.subtasks.length}`} color={t.sub} /> : null}
+              {task.remind ? <Meta icon="notifications-outline" text="" color={t.sub} /> : null}
+              {task.note ? <Meta icon="document-text-outline" text="" color={t.sub} /> : null}
+              {project ? (
+                <View style={st.metaItem}>
+                  <View style={[st.projDot, { backgroundColor: project.color }]} />
+                  <Text style={{ color: t.sub, fontSize: 12 }} numberOfLines={1}>{project.name}</Text>
+                </View>
+              ) : null}
+              {goal ? <Meta icon="flag-outline" text={goal.title} color={t.sub} /> : null}
+            </View>
           </View>
-        )}
-      </View>
-      {project ? (
-        <View style={[st.tag, { backgroundColor: project.color + (t.dark ? '33' : '1F') }]}>
-          <Text style={{ color: project.color, fontSize: 11, fontWeight: '700' }} numberOfLines={1}>{project.emoji} {project.name}</Text>
+          {task.priority === 3 && !task.done ? <Ionicons name="flag" size={14} color={t.danger} style={{ marginTop: 3 }} /> : null}
         </View>
-      ) : null}
-    </Pressable>
+      </Pressable>
+    </View>
   );
 }
 
 export const TaskItem = memo(TaskItemImpl);
 
 const st = StyleSheet.create({
-  row: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 13,
-    borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, marginHorizontal: 16, marginBottom: 8,
-  },
-  check: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  meta: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 2, marginTop: 4 },
-  tag: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, maxWidth: 96 },
+  wrap: { marginHorizontal: 16 },
+  row: { flexDirection: 'row', alignItems: 'flex-start', paddingLeft: 14 },
+  top: { borderTopLeftRadius: 16, borderTopRightRadius: 16 },
+  bottom: { borderBottomLeftRadius: 16, borderBottomRightRadius: 16 },
+  check: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.8, alignItems: 'center', justifyContent: 'center', marginTop: 14, marginRight: 12 },
+  body: { flex: 1, flexDirection: 'row', paddingVertical: 13, paddingRight: 14, gap: 8 },
+  meta: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 2, marginTop: 3 },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  projDot: { width: 7, height: 7, borderRadius: 4 },
 });

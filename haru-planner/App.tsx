@@ -7,7 +7,8 @@ import { dark, light, ThemeContext, useTheme } from './src/theme';
 import { EditorProvider, useEditor } from './src/components/TaskEditor';
 import { PortalProvider } from './src/components/portal';
 import { todayKey } from './src/date';
-import { tap } from './src/components/ui';
+import { IconName, tap } from './src/components/ui';
+import { Ionicons } from '@expo/vector-icons';
 import { TasksScreen } from './src/screens/TasksScreen';
 import { CalendarScreen } from './src/screens/CalendarScreen';
 import { ProjectsScreen } from './src/screens/ProjectsScreen';
@@ -18,12 +19,12 @@ import { hasPin, verifyPin } from './src/security';
 import { initNotifications } from './src/notify';
 
 type Tab = 'tasks' | 'calendar' | 'projects' | 'notes' | 'settings';
-const TABS: { key: Tab; icon: string; label: string }[] = [
-  { key: 'tasks', icon: '✅', label: '할 일' },
-  { key: 'calendar', icon: '📅', label: '캘린더' },
-  { key: 'projects', icon: '🎯', label: '프로젝트' },
-  { key: 'notes', icon: '📝', label: '메모' },
-  { key: 'settings', icon: '⚙️', label: '설정' },
+const TABS: { key: Tab; icon: IconName; iconOn: IconName; label: string }[] = [
+  { key: 'tasks', icon: 'checkmark-circle-outline', iconOn: 'checkmark-circle', label: '할 일' },
+  { key: 'calendar', icon: 'calendar-clear-outline', iconOn: 'calendar-clear', label: '캘린더' },
+  { key: 'projects', icon: 'folder-open-outline', iconOn: 'folder-open', label: '프로젝트' },
+  { key: 'notes', icon: 'document-text-outline', iconOn: 'document-text', label: '메모' },
+  { key: 'settings', icon: 'settings-outline', iconOn: 'settings', label: '설정' },
 ];
 
 const RELOCK_AFTER_MS = 60_000;
@@ -32,15 +33,13 @@ function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View style={[st.tabBar, { backgroundColor: t.card, borderTopColor: t.border, paddingBottom: Math.max(insets.bottom, 8) }]}>
+    <View style={[st.tabBar, { backgroundColor: t.card, borderTopColor: t.separator, paddingBottom: Math.max(insets.bottom, 8) }]}>
       {TABS.map((x) => {
         const on = x.key === tab;
         return (
           <Pressable key={x.key} style={st.tabItem} onPress={() => { tap(); onChange(x.key); }} accessibilityRole="tab" accessibilityState={{ selected: on }}>
-            <View style={[st.tabIcon, on && { backgroundColor: t.primarySoft }]}>
-              <Text style={{ fontSize: 18, opacity: on ? 1 : 0.55 }}>{x.icon}</Text>
-            </View>
-            <Text style={{ fontSize: 11, marginTop: 2, color: on ? t.primary : t.sub, fontWeight: on ? '800' : '500' }}>{x.label}</Text>
+            <Ionicons name={on ? x.iconOn : x.icon} size={23} color={on ? t.primary : t.faint} />
+            <Text style={{ fontSize: 11, marginTop: 3, color: on ? t.primary : t.sub, fontWeight: on ? '700' : '500' }}>{x.label}</Text>
           </Pressable>
         );
       })}
@@ -172,6 +171,5 @@ export default function App() {
 const st = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   tabBar: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 6 },
-  tabItem: { flex: 1, alignItems: 'center' },
-  tabIcon: { width: 48, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  tabItem: { flex: 1, alignItems: 'center', paddingTop: 2 },
 });

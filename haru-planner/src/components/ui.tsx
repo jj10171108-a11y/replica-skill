@@ -5,7 +5,15 @@ import {
 import { Portal } from './portal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '../theme';
+import { Ionicons } from '@expo/vector-icons';
+import { cardShadow, useTheme } from '../theme';
+
+export type IconName = React.ComponentProps<typeof Ionicons>['name'];
+
+export function Icon({ name, size = 20, color }: { name: IconName; size?: number; color?: string }) {
+  const t = useTheme();
+  return <Ionicons name={name} size={size} color={color ?? t.sub} />;
+}
 
 export const tap = () => {
   if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
@@ -59,11 +67,11 @@ function SheetBody({ onClose, title, children, right, full }: {
           <View style={[s.grabber, { backgroundColor: t.border }]} />
           {(title || right) && (
             <View style={s.sheetHeader}>
-              <Pressable onPress={onClose} hitSlop={12}>
-                <Text style={{ color: t.sub, fontSize: 16 }}>닫기</Text>
+              <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="닫기" style={[s.iconBtn, { backgroundColor: t.fill }]}>
+                <Ionicons name="close" size={18} color={t.sub} />
               </Pressable>
               <Text style={[s.sheetTitle, { color: t.text }]} numberOfLines={1}>{title}</Text>
-              <View style={{ minWidth: 40, alignItems: 'flex-end' }}>{right}</View>
+              <View style={{ minWidth: 34, alignItems: 'flex-end' }}>{right}</View>
             </View>
           )}
           <View style={full ? { flex: 1 } : { flexShrink: 1 }}>{children}</View>
@@ -84,35 +92,37 @@ export function Sheet(props: {
   );
 }
 
-export function Chip({ label, active, onPress, color, style }: {
-  label: string; active?: boolean; onPress?: () => void; color?: string; style?: ViewStyle;
+export function Chip({ label, active, onPress, color, style, icon }: {
+  label: string; active?: boolean; onPress?: () => void; color?: string; style?: ViewStyle; icon?: IconName;
 }) {
   const t = useTheme();
   const c = color ?? t.primary;
+  const fg = active ? c : t.sub;
   return (
     <Pressable
       onPress={() => { tap(); onPress?.(); }}
-      style={[
+      style={({ pressed }) => [
         s.chip,
-        { borderColor: active ? c : t.border, backgroundColor: active ? c + (t.dark ? '33' : '1A') : 'transparent' },
+        { backgroundColor: active ? (color ? c + (t.dark ? '2E' : '17') : t.primarySoft) : t.fill, opacity: pressed ? 0.7 : 1 },
         style,
       ]}
     >
-      <Text style={{ color: active ? c : t.sub, fontWeight: active ? '700' : '500', fontSize: 14 }}>{label}</Text>
+      {icon ? <Ionicons name={icon} size={15} color={color ?? fg} style={{ marginRight: 5 }} /> : null}
+      <Text style={{ color: fg, fontWeight: active ? '700' : '500', fontSize: 14 }}>{label}</Text>
     </Pressable>
   );
 }
 
 export function ChipRow({ children }: { children: React.ReactNode }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 16 }}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 16 }} keyboardShouldPersistTaps="handled">
       {children}
     </ScrollView>
   );
 }
 
-export function Button({ label, onPress, kind = 'primary', style, disabled }: {
-  label: string; onPress: () => void; kind?: 'primary' | 'ghost' | 'danger'; style?: ViewStyle; disabled?: boolean;
+export function Button({ label, onPress, kind = 'primary', style, disabled, icon }: {
+  label: string; onPress: () => void; kind?: 'primary' | 'ghost' | 'danger'; style?: ViewStyle; disabled?: boolean; icon?: IconName;
 }) {
   const t = useTheme();
   const bg = kind === 'primary' ? t.primary : kind === 'danger' ? t.dangerSoft : t.primarySoft;
@@ -121,8 +131,9 @@ export function Button({ label, onPress, kind = 'primary', style, disabled }: {
     <Pressable
       disabled={disabled}
       onPress={() => { tap(); onPress(); }}
-      style={({ pressed }) => [s.btn, { backgroundColor: bg, opacity: disabled ? 0.4 : pressed ? 0.8 : 1 }, style]}
+      style={({ pressed }) => [s.btn, { backgroundColor: bg, opacity: disabled ? 0.4 : pressed ? 0.85 : 1 }, style]}
     >
+      {icon ? <Ionicons name={icon} size={18} color={fg} style={{ marginRight: 6 }} /> : null}
       <Text style={{ color: fg, fontWeight: '700', fontSize: 16 }}>{label}</Text>
     </Pressable>
   );
@@ -134,25 +145,65 @@ export function Field(props: TextInputProps) {
     <TextInput
       placeholderTextColor={t.faint}
       {...props}
-      style={[s.field, { color: t.text, backgroundColor: t.bg, borderColor: t.border }, props.style]}
+      style={[s.field, { color: t.text, backgroundColor: t.fill }, props.style]}
     />
   );
 }
 
-export function Label({ children }: { children: React.ReactNode }) {
+export function SearchField({ value, onChangeText, placeholder }: { value: string; onChangeText: (v: string) => void; placeholder: string }) {
   const t = useTheme();
-  return <Text style={[s.label, { color: t.sub }]}>{children}</Text>;
+  return (
+    <View style={[s.search, { backgroundColor: t.fill }]}>
+      <Ionicons name="search" size={17} color={t.faint} />
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={t.faint}
+        returnKeyType="search"
+        style={{ flex: 1, color: t.text, fontSize: 15, paddingVertical: 0 }}
+      />
+      {value ? (
+        <Pressable onPress={() => onChangeText('')} hitSlop={10} accessibilityLabel="검색어 지우기">
+          <Ionicons name="close-circle" size={17} color={t.faint} />
+        </Pressable>
+      ) : null}
+    </View>
+  );
 }
 
-export function Fab({ onPress, label = '+' }: { onPress: () => void; label?: string }) {
+export function Label({ children, icon }: { children: React.ReactNode; icon?: IconName }) {
+  const t = useTheme();
+  return (
+    <View style={s.labelRow}>
+      {icon ? <Ionicons name={icon} size={15} color={t.sub} /> : null}
+      <Text style={[s.label, { color: t.sub }]}>{children}</Text>
+    </View>
+  );
+}
+
+export function Fab({ onPress, icon = 'add' }: { onPress: () => void; icon?: IconName }) {
   const t = useTheme();
   return (
     <Pressable
       accessibilityLabel="추가"
       onPress={() => { tap(); onPress(); }}
-      style={({ pressed }) => [s.fab, { backgroundColor: t.primary, transform: [{ scale: pressed ? 0.94 : 1 }] }]}
+      style={({ pressed }) => [
+        s.fab,
+        { backgroundColor: t.primary, shadowColor: t.primary, transform: [{ scale: pressed ? 0.95 : 1 }] },
+      ]}
     >
-      <Text style={{ color: t.onPrimary, fontSize: 30, lineHeight: 32, fontWeight: '400' }}>{label}</Text>
+      <Ionicons name={icon} size={28} color={t.onPrimary} />
+    </Pressable>
+  );
+}
+
+export function IconButton({ icon, onPress, label, color }: { icon: IconName; onPress: () => void; label: string; color?: string }) {
+  const t = useTheme();
+  return (
+    <Pressable onPress={() => { tap(); onPress(); }} hitSlop={8} accessibilityLabel={label}
+      style={({ pressed }) => [s.iconBtn, { backgroundColor: t.fill, opacity: pressed ? 0.7 : 1 }]}>
+      <Ionicons name={icon} size={18} color={color ?? t.text} />
     </Pressable>
   );
 }
@@ -162,39 +213,51 @@ export function ScreenHeader({ title, subtitle, right }: { title: string; subtit
   return (
     <View style={s.header}>
       <View style={{ flex: 1 }}>
-        {subtitle ? <Text style={{ color: t.sub, fontSize: 14, marginBottom: 2 }}>{subtitle}</Text> : null}
-        <Text style={{ color: t.text, fontSize: 28, fontWeight: '800', letterSpacing: -0.5 }}>{title}</Text>
+        {subtitle ? <Text style={{ color: t.sub, fontSize: 13, fontWeight: '600', marginBottom: 2 }}>{subtitle}</Text> : null}
+        <Text style={{ color: t.text, fontSize: 30, fontWeight: '800', letterSpacing: -0.8 }}>{title}</Text>
       </View>
+      {right ? <View style={{ flexDirection: 'row', gap: 8, paddingBottom: 4 }}>{right}</View> : null}
+    </View>
+  );
+}
+
+export function SectionTitle({ children, color, right }: { children: React.ReactNode; color?: string; right?: React.ReactNode }) {
+  const t = useTheme();
+  return (
+    <View style={s.sectionRow}>
+      <Text style={{ color: color ?? t.sub, fontSize: 13, fontWeight: '700', letterSpacing: 0.2 }}>{children}</Text>
       {right}
     </View>
   );
 }
 
-export function Progress({ value, color, height = 8 }: { value: number; color?: string; height?: number }) {
+export function Progress({ value, color, height = 6 }: { value: number; color?: string; height?: number }) {
   const t = useTheme();
   return (
-    <View style={{ height, borderRadius: height, backgroundColor: t.border, overflow: 'hidden' }}>
+    <View style={{ height, borderRadius: height, backgroundColor: t.fill, overflow: 'hidden' }}>
       <View style={{ width: `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%`, height, borderRadius: height, backgroundColor: color ?? t.primary }} />
     </View>
   );
 }
 
-export function Empty({ emoji, title, desc }: { emoji: string; title: string; desc?: string }) {
+export function Empty({ icon, title, desc }: { icon: IconName; title: string; desc?: string }) {
   const t = useTheme();
   return (
-    <View style={{ alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24 }}>
-      <Text style={{ fontSize: 44 }}>{emoji}</Text>
-      <Text style={{ color: t.text, fontSize: 17, fontWeight: '700', marginTop: 12 }}>{title}</Text>
+    <View style={{ alignItems: 'center', paddingVertical: 44, paddingHorizontal: 24 }}>
+      <View style={[s.emptyIcon, { backgroundColor: t.fill }]}>
+        <Ionicons name={icon} size={26} color={t.faint} />
+      </View>
+      <Text style={{ color: t.text, fontSize: 16, fontWeight: '700', marginTop: 14 }}>{title}</Text>
       {desc ? <Text style={{ color: t.sub, fontSize: 14, marginTop: 6, textAlign: 'center', lineHeight: 20 }}>{desc}</Text> : null}
     </View>
   );
 }
 
 export function Card({ children, style, onPress, onLongPress }: {
-  children: React.ReactNode; style?: ViewStyle; onPress?: () => void; onLongPress?: () => void;
+  children: React.ReactNode; style?: ViewStyle | ViewStyle[]; onPress?: () => void; onLongPress?: () => void;
 }) {
   const t = useTheme();
-  const base = [s.card, { backgroundColor: t.card, borderColor: t.border }, style];
+  const base = [s.card, { backgroundColor: t.card }, cardShadow(t), style];
   if (!onPress && !onLongPress) return <View style={base}>{children}</View>;
   return (
     <Pressable onPress={onPress} onLongPress={onLongPress} style={({ pressed }) => [base, { opacity: pressed ? 0.85 : 1 }]}>
@@ -208,14 +271,14 @@ export function Segmented<T extends string>({ value, options, onChange }: {
 }) {
   const t = useTheme();
   return (
-    <View style={[s.seg, { backgroundColor: t.dark ? t.card : '#E8EAF1' }]}>
+    <View style={[s.seg, { backgroundColor: t.fill }]}>
       {options.map((o) => {
         const on = o.value === value;
         return (
           <Pressable
             key={o.value}
             onPress={() => { tap(); onChange(o.value); }}
-            style={[s.segItem, on && { backgroundColor: t.dark ? t.elevated : '#FFFFFF' }]}
+            style={[s.segItem, on && [{ backgroundColor: t.dark ? t.elevated : '#FFFFFF' }, !t.dark && s.segShadow]]}
           >
             <Text style={{ color: on ? t.text : t.sub, fontWeight: on ? '700' : '500', fontSize: 14 }}>{o.label}</Text>
           </Pressable>
@@ -225,21 +288,53 @@ export function Segmented<T extends string>({ value, options, onChange }: {
   );
 }
 
+/** 설정 화면 등에서 쓰는 목록 행 */
+export function ListRow({ icon, iconBg, title, desc, right, onPress, last }: {
+  icon?: IconName; iconBg?: string; title: string; desc?: string; right?: React.ReactNode; onPress?: () => void; last?: boolean;
+}) {
+  const t = useTheme();
+  return (
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => [s.listRow, { backgroundColor: pressed ? t.fill : 'transparent' }]}>
+      {icon ? (
+        <View style={[s.rowIcon, { backgroundColor: iconBg ?? t.primary }]}>
+          <Ionicons name={icon} size={16} color="#fff" />
+        </View>
+      ) : null}
+      <View style={[s.rowBody, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.separator }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: t.text, fontSize: 16 }}>{title}</Text>
+          {desc ? <Text style={{ color: t.sub, fontSize: 13, marginTop: 2, lineHeight: 18 }}>{desc}</Text> : null}
+        </View>
+        {right ?? (onPress ? <Ionicons name="chevron-forward" size={18} color={t.faint} /> : null)}
+      </View>
+    </Pressable>
+  );
+}
+
 const s = StyleSheet.create({
-  sheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 8 },
-  grabber: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, marginBottom: 6 },
-  sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 10, gap: 12 },
+  sheet: { borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingTop: 8 },
+  grabber: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, marginBottom: 4 },
+  sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8, gap: 12 },
   sheetTitle: { fontSize: 17, fontWeight: '700', flex: 1, textAlign: 'center' },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1.5 },
-  btn: { height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
-  field: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16 },
-  label: { fontSize: 13, fontWeight: '700', marginTop: 18, marginBottom: 8, letterSpacing: 0.2 },
+  iconBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  chip: { flexDirection: 'row', alignItems: 'center', height: 36, paddingHorizontal: 14, borderRadius: 10 },
+  btn: { flexDirection: 'row', height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
+  field: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16 },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 42, borderRadius: 12, paddingHorizontal: 12 },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 20, marginBottom: 10 },
+  label: { fontSize: 13, fontWeight: '700', letterSpacing: 0.2 },
   fab: {
-    position: 'absolute', right: 20, bottom: 20, width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6,
+    position: 'absolute', right: 20, bottom: 20, width: 58, height: 58, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
+    shadowOpacity: 0.35, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 6,
   },
-  header: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12 },
-  card: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, padding: 16 },
+  header: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 14 },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 20, marginTop: 18, marginBottom: 8 },
+  card: { borderRadius: 18, padding: 16 },
   seg: { flexDirection: 'row', borderRadius: 12, padding: 3 },
   segItem: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 10 },
+  segShadow: { shadowColor: '#101828', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
+  emptyIcon: { width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  listRow: { flexDirection: 'row', alignItems: 'center', paddingLeft: 16 },
+  rowIcon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  rowBody: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingVertical: 13, paddingRight: 16, gap: 10 },
 });
