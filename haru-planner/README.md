@@ -53,8 +53,24 @@ PC에서 실행했다면 같은 Wi-Fi에서 Expo Go로 QR을 스캔하면 됩니
 
 ### 참고
 
-- Expo Go에서도 로컬 알림은 동작하지만, 정식 앱처럼 쓰려면 `npx eas-cli build -p android --profile preview`로 APK를 만들어 설치하는 걸 권장합니다.
+- Expo Go에서도 로컬 알림은 동작하지만, 정식 앱처럼 쓰려면 APK로 만들어 설치하는 걸 권장합니다 (아래 참고).
 - 웹 미리보기: `npx expo start --web` (알림·보안 저장소는 웹에서 제한됨)
+
+## APK 만들기 (EAS 클라우드 빌드)
+
+빌드는 Expo 서버에서 진행되므로 휴대폰(Termux)에서도 가능합니다. 무료 계정으로 충분합니다.
+
+```bash
+cd haru-planner
+npx eas-cli@latest login                                  # expo.dev 계정으로 로그인 (없으면 사이트에서 가입)
+npx eas-cli@latest init                                   # 프로젝트 등록 (app.json에 projectId 추가됨)
+git add -A && git commit -m "Link EAS project"            # 빌드 전에 변경사항 커밋
+npx eas-cli@latest build -p android --profile preview     # APK 빌드 (서명 키 생성 질문에 Y)
+```
+
+빌드가 끝나면(보통 10~20분, 무료는 대기열이 있을 수 있음) 터미널에 다운로드 링크와 QR이 나옵니다.
+링크를 휴대폰 브라우저로 열어 APK를 받고 설치하세요. "출처를 알 수 없는 앱 설치"를 허용해야 할 수 있습니다.
+빌드 목록은 https://expo.dev 의 프로젝트 > Builds 에서도 볼 수 있습니다.
 
 ## 구조
 
