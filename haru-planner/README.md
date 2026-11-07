@@ -81,6 +81,17 @@ npx eas-cli@latest build -p android --profile preview     # APK 빌드 (서명 �
 링크를 휴대폰 브라우저로 열어 APK를 받고 설치하세요. "출처를 알 수 없는 앱 설치"를 허용해야 할 수 있습니다.
 빌드 목록은 https://expo.dev 의 프로젝트 > Builds 에서도 볼 수 있습니다.
 
+## 자동 업데이트 (EAS Update)
+
+`expo-updates` 가 들어간 APK를 한 번 설치한 뒤부터는, 화면·기능(JS) 수정은 아래 한 줄로 배포됩니다.
+
+```bash
+EAS_SKIP_AUTO_FINGERPRINT=1 npx eas-cli@latest update --channel preview --message "수정 내용"
+```
+
+- 앱을 켜면 새 버전을 확인해 내려받고 "지금 적용"을 물어봅니다 (설정 → 업데이트 확인으로 수동 확인도 가능).
+- 위젯 등 **네이티브 기능**이나 새 패키지가 추가되면 APK를 다시 빌드해야 합니다. 이때 `app.json` 의 `version` 을 올리세요 (예: 1.0.0 → 1.1.0). 버전이 같은 APK끼리만 업데이트를 주고받습니다.
+
 ## 구조
 
 ```

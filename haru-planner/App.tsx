@@ -17,6 +17,7 @@ import { SettingsScreen } from './src/screens/SettingsScreen';
 import { PinPad } from './src/screens/LockScreen';
 import { hasPin, verifyPin } from './src/security';
 import { initNotifications } from './src/notify';
+import { checkAndApplyUpdate } from './src/updates';
 
 type Tab = 'tasks' | 'calendar' | 'projects' | 'notes' | 'settings';
 const TABS: { key: Tab; icon: IconName; iconOn: IconName; label: string }[] = [
@@ -108,6 +109,17 @@ function Gate() {
   const bgAt = useRef<number | null>(null);
 
   useEffect(() => { initNotifications(); }, []);
+
+  // 자동 업데이트: 앱을 켤 때 + 30분 넘게 쉬다 돌아왔을 때 새 버전 확인
+  const lastCheck = useRef(0);
+  useEffect(() => {
+    const run = () => { lastCheck.current = Date.now(); checkAndApplyUpdate(); };
+    const first = setTimeout(run, 3000);
+    const sub = AppState.addEventListener('change', (st) => {
+      if (st === 'active' && Date.now() - lastCheck.current > 30 * 60_000) run();
+    });
+    return () => { clearTimeout(first); sub.remove(); };
+  }, []);
 
   useEffect(() => {
     if (!loaded) return;

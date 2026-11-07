@@ -5,6 +5,10 @@ import { normalize, useStore } from '../store';
 import { tint, useTheme } from '../theme';
 import { clearPin, setPin, verifyPin } from '../security';
 import { requestPermission } from '../notify';
+import { checkAndApplyUpdate, currentVersionLabel } from '../updates';
+import Constants from 'expo-constants';
+
+const appVersion = Constants.expoConfig?.version ?? '1.0.0';
 import { Button, Card, Chip, ChipRow, Field, ListRow, ScreenHeader, SectionTitle, Segmented, Sheet } from '../components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { PinPad } from './LockScreen';
@@ -158,8 +162,13 @@ export function SettingsScreen() {
         <ListRow icon="trash-outline" iconBg="#A8335E" title="모든 데이터 초기화" last onPress={reset} />
       </Card>
 
+      <SectionTitle>앱 정보</SectionTitle>
+      <Card style={st.group}>
+        <ListRow icon="cloud-download-outline" iconBg="#5B45B8" title="업데이트 확인" desc={`하루 플래너 v${appVersion} · ${currentVersionLabel()}`} last onPress={() => checkAndApplyUpdate(false)} />
+      </Card>
+
       <Text style={{ color: t.faint, fontSize: 12, textAlign: 'center', marginTop: 28 }}>
-        하루 플래너 v1.1 · 남은 할 일 {stats.open}개
+        남은 할 일 {stats.open}개 · 새 버전은 자동으로 받아져요
       </Text>
 
       <Modal visible={!!pinFlow} animationType="fade" onRequestClose={() => setPinFlow(null)}>
