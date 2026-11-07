@@ -1,0 +1,23 @@
+# 자동 업데이트(EAS Update)를 Expo 서버에서 만들어 배포한다.
+# Termux(안드로이드)에서는 Hermes 컴파일러가 동작하지 않아 `eas update`를 직접 못 돌리므로 이 워크플로를 쓴다.
+#
+# 실행:  npx eas-cli@latest workflow:run .eas/workflows/update.yml -F message="수정 내용"
+name: Publish update (preview)
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        type: string
+        required: false
+        description: 업데이트 메모
+
+jobs:
+  publish_update:
+    name: Publish Android update to preview
+    type: update
+    environment: preview
+    params:
+      channel: preview
+      platform: android
+      message: ${{ inputs.message || '하루 플래너 업데이트' }}
