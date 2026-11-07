@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle,
+  Animated, BackHandler, Easing, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle,
 } from 'react-native';
+import { Portal } from './portal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../theme';
@@ -10,38 +11,76 @@ export const tap = () => {
   if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
 };
 
-export function Sheet({ visible, onClose, title, children, right, full }: {
-  visible: boolean; onClose: () => void; title?: string; children: React.ReactNode; right?: React.ReactNode; full?: boolean;
+function useKeyboardHeight() {
+  const [h, setH] = useState(0);
+  useEffect(() => {
+    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const a = Keyboard.addListener(showEvt, (e) => setH(e.endCoordinates.height));
+    const b = Keyboard.addListener(hideEvt, () => setH(0));
+    return () => { a.remove(); b.remove(); };
+  }, []);
+  return h;
+}
+
+function SheetBody({ onClose, title, children, right, full }: {
+  onClose: () => void; title?: string; children: React.ReactNode; right?: React.ReactNode; full?: boolean;
 }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const kb = useKeyboardHeight();
+  const slide = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.timing(slide, { toValue: 0, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [slide]);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  // 마운트 순서대로 등록 → 가장 위(나중에 열린) 시트가 뒤로가기를 먼저 받음
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => { closeRef.current(); return true; });
+    return () => sub.remove();
+  }, []);
+  // 안드로이드: 키보드 높이에는 내비게이션 바가 빠져 있으므로 더해 준다
+  const bottom = kb > 0 ? kb + (Platform.OS === 'android' ? insets.bottom : 0) + 8 : insets.bottom + 12;
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: t.overlay }]} onPress={onClose} accessibilityLabel="닫기" />
-        <View style={{ flex: 1, justifyContent: 'flex-end' }} pointerEvents="box-none">
-          <View
-            style={[
-              s.sheet,
-              { backgroundColor: t.card, paddingBottom: insets.bottom + 12 },
-              full ? { height: '92%' } : { maxHeight: '90%' },
-            ]}
-          >
-            <View style={[s.grabber, { backgroundColor: t.border }]} />
-            {(title || right) && (
-              <View style={s.sheetHeader}>
-                <Pressable onPress={onClose} hitSlop={12}>
-                  <Text style={{ color: t.sub, fontSize: 16 }}>닫기</Text>
-                </Pressable>
-                <Text style={[s.sheetTitle, { color: t.text }]} numberOfLines={1}>{title}</Text>
-                <View style={{ minWidth: 40, alignItems: 'flex-end' }}>{right}</View>
-              </View>
-            )}
-            {children}
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+    <View style={StyleSheet.absoluteFill}>
+      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: t.overlay, opacity: slide.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => { Keyboard.dismiss(); onClose(); }} accessibilityLabel="닫기" />
+      </Animated.View>
+      <View style={{ flex: 1, justifyContent: 'flex-end', paddingTop: insets.top + 8 }} pointerEvents="box-none">
+        <Animated.View
+          style={[
+            s.sheet,
+            { backgroundColor: t.card, paddingBottom: bottom },
+            full ? { height: '94%' } : { maxHeight: '94%' },
+            { transform: [{ translateY: slide.interpolate({ inputRange: [0, 1], outputRange: [0, 600] }) }] },
+          ]}
+        >
+          <View style={[s.grabber, { backgroundColor: t.border }]} />
+          {(title || right) && (
+            <View style={s.sheetHeader}>
+              <Pressable onPress={onClose} hitSlop={12}>
+                <Text style={{ color: t.sub, fontSize: 16 }}>닫기</Text>
+              </Pressable>
+              <Text style={[s.sheetTitle, { color: t.text }]} numberOfLines={1}>{title}</Text>
+              <View style={{ minWidth: 40, alignItems: 'flex-end' }}>{right}</View>
+            </View>
+          )}
+          <View style={full ? { flex: 1 } : { flexShrink: 1 }}>{children}</View>
+        </Animated.View>
+      </View>
+    </View>
+  );
+}
+
+export function Sheet(props: {
+  visible: boolean; onClose: () => void; title?: string; children: React.ReactNode; right?: React.ReactNode; full?: boolean;
+}) {
+  const { visible, ...rest } = props;
+  return (
+    <Portal visible={visible}>
+      <SheetBody {...rest} />
+    </Portal>
   );
 }
 

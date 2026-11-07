@@ -3,8 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppData, Goal, Note, Project, Settings, Task } from './types';
 import { nextOccurrence, todayKey, addDays } from './date';
 import { cancelReminder, scheduleReminder } from './notify';
+import { refreshWidgets } from './widget/bridge';
 
-const STORAGE_KEY = 'haru_planner_v1';
+export const STORAGE_KEY = 'haru_planner_v1';
 
 export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
@@ -120,7 +121,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     const h = setTimeout(() => {
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch((e) => console.warn('저장 실패', e));
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+        .then(() => refreshWidgets(data))
+        .catch((e) => console.warn('저장 실패', e));
     }, 300);
     return () => clearTimeout(h);
   }, [data, loaded]);

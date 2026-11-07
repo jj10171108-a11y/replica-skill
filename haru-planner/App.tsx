@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, AppState, Linking, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StoreProvider, useStore } from './src/store';
 import { dark, light, ThemeContext, useTheme } from './src/theme';
-import { EditorProvider } from './src/components/TaskEditor';
+import { EditorProvider, useEditor } from './src/components/TaskEditor';
+import { PortalProvider } from './src/components/portal';
+import { todayKey } from './src/date';
 import { tap } from './src/components/ui';
 import { TasksScreen } from './src/screens/TasksScreen';
 import { CalendarScreen } from './src/screens/CalendarScreen';
@@ -46,14 +48,44 @@ function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
   );
 }
 
+let handledInitialUrl = false;
+
 function Main() {
   const t = useTheme();
   const [tab, setTab] = useState<Tab>('tasks');
+  const [focusDate, setFocusDate] = useState<{ date: string; n: number } | null>(null);
+  const { openTask } = useEditor();
+
+  // 위젯에서 누른 링크 처리: haruplanner://calendar?date=..., ://tasks, ://new
+  useEffect(() => {
+    const handle = (url: string | null | undefined) => {
+      if (!url) return;
+      const m = url.match(/^haruplanner:\/\/([a-z]+)(?:\?date=(\d{4}-\d{2}-\d{2}))?/);
+      if (!m) return;
+      const [, path, date] = m;
+      if (path === 'calendar') {
+        setTab('calendar');
+        setFocusDate({ date: date ?? todayKey(), n: Date.now() });
+      } else if (path === 'tasks') {
+        setTab('tasks');
+      } else if (path === 'new') {
+        setTab('tasks');
+        setTimeout(() => openTask({ due: date ?? todayKey() }), 150);
+      }
+    };
+    if (!handledInitialUrl) {
+      handledInitialUrl = true;
+      Linking.getInitialURL().then(handle).catch(() => {});
+    }
+    const sub = Linking.addEventListener('url', (e) => handle(e.url));
+    return () => sub.remove();
+  }, [openTask]);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={['top', 'left', 'right']}>
       <View style={{ flex: 1 }}>
         {tab === 'tasks' && <TasksScreen />}
-        {tab === 'calendar' && <CalendarScreen />}
+        {tab === 'calendar' && <CalendarScreen focus={focusDate} />}
         {tab === 'projects' && <ProjectsScreen />}
         {tab === 'notes' && <NotesScreen />}
         {tab === 'settings' && <SettingsScreen />}
@@ -109,11 +141,13 @@ function Gate() {
     );
   } else {
     body = (
-      <EditorProvider>
-        <NoteEditorProvider>
-          <Main />
-        </NoteEditorProvider>
-      </EditorProvider>
+      <PortalProvider>
+        <EditorProvider>
+          <NoteEditorProvider>
+            <Main />
+          </NoteEditorProvider>
+        </EditorProvider>
+      </PortalProvider>
     );
   }
 

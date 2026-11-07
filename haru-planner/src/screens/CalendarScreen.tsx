@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { formatLong, fromKey, todayKey } from '../date';
 import { useStore } from '../store';
@@ -9,7 +9,7 @@ import { useEditor } from '../components/TaskEditor';
 import { Card, Empty, Fab, ScreenHeader } from '../components/ui';
 import { useNoteEditor } from './NotesScreen';
 
-export function CalendarScreen() {
+export function CalendarScreen({ focus }: { focus?: { date: string; n: number } | null }) {
   const t = useTheme();
   const { data, toggleTask } = useStore();
   const { openTask, quickMenu } = useEditor();
@@ -19,6 +19,14 @@ export function CalendarScreen() {
   const [ym, setYm] = useState({ y: init.getFullYear(), m: init.getMonth() });
 
   const projectMap = useMemo(() => Object.fromEntries(data.projects.map((p) => [p.id, p])), [data.projects]);
+
+  // 위젯에서 특정 날짜를 눌러 들어온 경우
+  useEffect(() => {
+    if (!focus) return;
+    setSelected(focus.date);
+    const d = fromKey(focus.date);
+    setYm({ y: d.getFullYear(), m: d.getMonth() });
+  }, [focus]);
 
   const markers = useMemo(() => {
     const m: Record<string, string[]> = {};

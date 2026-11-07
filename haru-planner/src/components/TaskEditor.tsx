@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { addDays, formatDue, formatTime, todayKey, startOfWeek } from '../date';
 import { newTask, uid, useStore } from '../store';
@@ -20,6 +20,12 @@ function Editor({ initial, onClose }: { initial: Task; onClose: () => void }) {
   const [dateOpen, setDateOpen] = useState(false);
   const [timeOpen, setTimeOpen] = useState(false);
   const [subDraft, setSubDraft] = useState('');
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  // 키보드가 올라온 뒤 입력 중인 세부 항목이 보이도록 아래로 스크롤
+  const revealBottom = () => {
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 400);
+  };
   const set = <K extends keyof Task>(k: K, v: Task[K]) => setTask((p) => ({ ...p, [k]: v }));
   const today = todayKey();
   const nextMon = addDays(startOfWeek(today, 1), 7);
@@ -65,11 +71,12 @@ function Editor({ initial, onClose }: { initial: Task; onClose: () => void }) {
     if (!v) return;
     set('subtasks', [...task.subtasks, { id: uid(), title: v, done: false }]);
     setSubDraft('');
+    revealBottom();
   };
 
   return (
     <>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
         <TextInput
           value={task.title}
           onChangeText={(v) => set('title', v)}
@@ -154,6 +161,7 @@ function Editor({ initial, onClose }: { initial: Task; onClose: () => void }) {
             <TextInput
               value={s.title}
               onChangeText={(v) => set('subtasks', task.subtasks.map((x) => (x.id === s.id ? { ...x, title: v } : x)))}
+              onFocus={revealBottom}
               style={{ flex: 1, color: s.done ? t.faint : t.text, fontSize: 15, textDecorationLine: s.done ? 'line-through' : 'none', paddingVertical: 4 }}
             />
             <Pressable hitSlop={10} onPress={() => set('subtasks', task.subtasks.filter((x) => x.id !== s.id))}>
@@ -162,7 +170,7 @@ function Editor({ initial, onClose }: { initial: Task; onClose: () => void }) {
           </View>
         ))}
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Field value={subDraft} onChangeText={setSubDraft} placeholder="세부 항목 추가" onSubmitEditing={addSub} returnKeyType="done" blurOnSubmit={false} style={{ flex: 1 }} />
+          <Field value={subDraft} onChangeText={setSubDraft} placeholder="세부 항목 추가" onFocus={revealBottom} onSubmitEditing={addSub} returnKeyType="done" blurOnSubmit={false} style={{ flex: 1 }} />
           <Button label="추가" kind="ghost" onPress={addSub} style={{ height: 48 }} />
         </View>
 
