@@ -1,0 +1,245 @@
+{
+  "color": {
+    "bg": "#121117",
+    "surface": "#1B1A22",
+    "fill": "#25232E",
+    "border": "#2D2B37",
+    "text": "#EEECF4",
+    "text-muted": "#A29DB0",
+    "text-faint": "#7A7588",
+    "accent": "#A594F9",
+    "on-accent": "#17141F",
+    "accent-soft": "#2A2446",
+    "accent-ink": "#C4B8FF",
+    "danger": "#FF7A85",
+    "success": "#5FD39A",
+    "warning": "#F2B44C",
+    "saturday": "#8DB4FF",
+    "lavender-bg": "#2A2446",
+    "lavender-ink": "#C4B8FF",
+    "mint-bg": "#183126",
+    "mint-ink": "#7FDDAE",
+    "peach-bg": "#3A2420",
+    "peach-ink": "#FFB59A",
+    "sky-bg": "#1A2A40",
+    "sky-ink": "#9CC3FF",
+    "butter-bg": "#332B14",
+    "butter-ink": "#F2D27A",
+    "rose-bg": "#3A1F2A",
+    "rose-ink": "#FF9FBF",
+    "stone-bg": "#26252B",
+    "stone-ink": "#C9C5D2"
+  },
+  "pairs": [
+    [
+      "text",
+      "bg"
+    ],
+    [
+      "text",
+      "surface"
+    ],
+    [
+      "text",
+      "fill"
+    ],
+    [
+      "text-muted",
+      "bg"
+    ],
+    [
+      "text-muted",
+      "surface"
+    ],
+    [
+      "text-muted",
+      "fill"
+    ],
+    [
+      "on-accent",
+      "accent"
+    ],
+    [
+      "accent",
+      "surface"
+    ],
+    [
+      "accent-ink",
+      "accent-soft"
+    ],
+    [
+      "accent-ink",
+      "surface"
+    ],
+    [
+      "danger",
+      "surface"
+    ],
+    [
+      "danger",
+      "bg"
+    ],
+    [
+      "success",
+      "surface"
+    ],
+    [
+      "warning",
+      "surface"
+    ],
+    [
+      "saturday",
+      "surface"
+    ],
+    [
+      "text-faint",
+      "surface",
+      "ui"
+    ],
+    [
+      "lavender-ink",
+      "lavender-bg"
+    ],
+    [
+      "text",
+      "lavender-bg"
+    ],
+    [
+      "text-muted",
+      "lavender-bg"
+    ],
+    [
+      "mint-ink",
+      "mint-bg"
+    ],
+    [
+      "text",
+      "mint-bg"
+    ],
+    [
+      "text-muted",
+      "mint-bg"
+    ],
+    [
+      "peach-ink",
+      "peach-bg"
+    ],
+    [
+      "text",
+      "peach-bg"
+    ],
+    [
+      "text-muted",
+      "peach-bg"
+    ],
+    [
+      "sky-ink",
+      "sky-bg"
+    ],
+    [
+      "text",
+      "sky-bg"
+    ],
+    [
+      "text-muted",
+      "sky-bg"
+    ],
+    [
+      "butter-ink",
+      "butter-bg"
+    ],
+    [
+      "text",
+      "butter-bg"
+    ],
+    [
+      "text-muted",
+      "butter-bg"
+    ],
+    [
+      "rose-ink",
+      "rose-bg"
+    ],
+    [
+      "text",
+      "rose-bg"
+    ],
+    [
+      "text-muted",
+      "rose-bg"
+    ],
+    [
+      "stone-ink",
+      "stone-bg"
+    ],
+    [
+      "text",
+      "stone-bg"
+    ],
+    [
+      "text-muted",
+      "stone-bg"
+    ]
+  ],
+  "font": {
+    "sans": "system (Pretendard / Noto Sans KR on Android)"
+  },
+  "type": {
+    "caption": {
+      "size": 12,
+      "line": 16,
+      "weight": 500
+    },
+    "sm": {
+      "size": 14,
+      "line": 20,
+      "weight": 400
+    },
+    "base": {
+      "size": 16,
+      "line": 22,
+      "weight": 500
+    },
+    "lg": {
+      "size": 18,
+      "line": 24,
+      "weight": 700
+    },
+    "xl": {
+      "size": 24,
+      "line": 30,
+      "weight": 800
+    },
+    "display": {
+      "size": 30,
+      "line": 36,
+      "weight": 800
+    }
+  },
+  "space": [
+    0,
+    4,
+    8,
+    12,
+    16,
+    20,
+    24,
+    32,
+    48
+  ],
+  "radius": {
+    "sm": 10,
+    "md": 16,
+    "lg": 22,
+    "pill": 999
+  },
+  "shadow": {
+    "card": "0 4px 16px rgba(60,40,120,.06)",
+    "pop": "0 12px 32px rgba(60,40,120,.14)"
+  },
+  "motion": {
+    "fast": "120ms",
+    "base": "220ms",
+    "ease": "cubic-bezier(.2,.8,.2,1)"
+  }
+}

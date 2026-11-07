@@ -1,14 +1,14 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, SectionList, Text, View } from 'react-native';
+import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { addDays, formatLong, todayKey } from '../date';
 import { getHoliday } from '../holidays';
 import { useStore } from '../store';
-import { useTheme } from '../theme';
+import { tint, useTheme } from '../theme';
 import { Task } from '../types';
 import { positionOf, TaskItem } from '../components/TaskItem';
 import { useEditor } from '../components/TaskEditor';
-import { Card, Chip, ChipRow, Empty, Fab, Progress, ScreenHeader, SearchField, SectionTitle, Segmented, tap } from '../components/ui';
+import { Chip, ChipRow, Empty, Fab, ScreenHeader, SearchField, SectionTitle, Segmented, tap } from '../components/ui';
 
 type Filter = 'today' | 'upcoming' | 'all' | 'done';
 type Sort = 'smart' | 'priority' | 'created';
@@ -83,24 +83,27 @@ export function TasksScreen() {
 
   const onPress = useCallback((task: Task) => openTask(task), [openTask]);
   const hour = new Date().getHours();
-  const greet = hour < 6 ? '편안한 밤 보내세요' : hour < 12 ? '좋은 아침이에요' : hour < 18 ? '오늘도 화이팅' : '오늘 하루 수고했어요';
-  const ratio = todayStats.total ? todayStats.done / todayStats.total : 0;
+  const greet = hour < 6 ? '편안한 밤 되세요 🌙' : hour < 12 ? '좋은 아침이에요 ☀️' : hour < 18 ? '오늘도 화이팅 🌿' : '오늘도 수고했어요 🌙';
+  const overdueCount = useMemo(() => data.tasks.filter((x) => !x.done && x.due && x.due < today).length, [data.tasks, today]);
 
   const header = (
     <View>
-      <ScreenHeader title="할 일" subtitle={formatLong(today)} />
-      <Card style={{ marginHorizontal: 16, marginBottom: 14 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: t.sub, fontSize: 13, fontWeight: '600' }}>{holiday ? `오늘은 ${holiday}` : greet}</Text>
-            <Text style={{ color: t.text, fontSize: 17, fontWeight: '700', marginTop: 3 }}>
-              {todayStats.total === 0 ? '오늘 예정된 일이 없어요' : todayStats.done === todayStats.total ? '오늘 할 일을 모두 끝냈어요' : `${todayStats.total - todayStats.done}개 남았어요`}
-            </Text>
-          </View>
-          <Text style={{ color: t.primary, fontSize: 24, fontWeight: '800', letterSpacing: -0.5 }}>{Math.round(ratio * 100)}%</Text>
-        </View>
-        <Progress value={ratio} />
-      </Card>
+      <ScreenHeader title={holiday ? `오늘은 ${holiday} 🎉` : greet} subtitle={formatLong(today)} />
+      <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 16 }}>
+        {[
+          { label: '오늘 남은 일', n: todayStats.total - todayStats.done, icon: 'sunny-outline' as const, c: tint(t, '#5B45B8'), on: () => setFilter('today') },
+          { label: '오늘 완료', n: todayStats.done, icon: 'checkmark-circle-outline' as const, c: tint(t, '#1F7A55'), on: () => setFilter('done') },
+          { label: '기한 지남', n: overdueCount, icon: 'alarm-outline' as const, c: tint(t, overdueCount ? '#A8335E' : '#5A5560'), on: () => setFilter('upcoming') },
+        ].map((x) => (
+          <Pressable key={x.label} onPress={() => { tap(); x.on(); }} style={({ pressed }) => [st.tile, { backgroundColor: x.c.bg, opacity: pressed ? 0.8 : 1 }]}>
+            <View style={[st.tileIcon, { backgroundColor: t.dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.8)' }]}>
+              <Ionicons name={x.icon} size={17} color={x.c.ink} />
+            </View>
+            <Text style={{ color: t.text, fontSize: 26, fontWeight: '800', marginTop: 10, letterSpacing: -0.5 }}>{x.n}</Text>
+            <Text style={{ color: x.c.ink, fontSize: 12, fontWeight: '700', marginTop: 1 }}>{x.label}</Text>
+          </Pressable>
+        ))}
+      </View>
       <View style={{ paddingHorizontal: 16, gap: 10 }}>
         <Segmented<Filter> value={filter} onChange={setFilter} options={[
           { value: 'today', label: '오늘' }, { value: 'upcoming', label: '예정' }, { value: 'all', label: '전체' }, { value: 'done', label: '완료' },
@@ -162,3 +165,8 @@ export function TasksScreen() {
     </View>
   );
 }
+
+const st = StyleSheet.create({
+  tile: { flex: 1, borderRadius: 24, padding: 14 },
+  tileIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+});

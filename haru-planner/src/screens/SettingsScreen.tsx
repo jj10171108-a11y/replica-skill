@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Alert, Modal, Platform, ScrollView, Share, StyleSheet, Switch, Text, View } from 'react-native';
 import { addDays, startOfWeek, todayKey } from '../date';
 import { normalize, useStore } from '../store';
-import { useTheme } from '../theme';
+import { tint, useTheme } from '../theme';
 import { clearPin, setPin, verifyPin } from '../security';
 import { requestPermission } from '../notify';
 import { Button, Card, Chip, ChipRow, Field, ListRow, ScreenHeader, SectionTitle, Segmented, Sheet } from '../components/ui';
@@ -95,14 +95,14 @@ export function SettingsScreen() {
 
       <View style={st.statsRow}>
         {[
-          { n: stats.streak, l: '연속 달성일', i: 'flame' as const, c: '#F76707' },
-          { n: stats.week, l: '이번 주 완료', i: 'checkmark-done' as const, c: t.primary },
-          { n: stats.total, l: '총 완료', i: 'trophy' as const, c: '#F59F00' },
+          { n: stats.streak, l: '연속 달성일', i: 'flame' as const, c: '#A84B24' },
+          { n: stats.week, l: '이번 주 완료', i: 'checkmark-done' as const, c: '#5B45B8' },
+          { n: stats.total, l: '총 완료', i: 'trophy' as const, c: '#7D5F00' },
         ].map((x) => (
-          <Card key={x.l} style={{ flex: 1, paddingVertical: 14, paddingHorizontal: 14 }}>
-            <Ionicons name={x.i} size={18} color={x.c} />
+          <Card key={x.l} style={{ flex: 1, paddingVertical: 14, paddingHorizontal: 14, backgroundColor: tint(t, x.c).bg, shadowOpacity: 0, elevation: 0 }}>
+            <Ionicons name={x.i} size={19} color={tint(t, x.c).ink} />
             <Text style={{ color: t.text, fontSize: 24, fontWeight: '800', marginTop: 8, letterSpacing: -0.5 }}>{x.n}</Text>
-            <Text style={{ color: t.sub, fontSize: 12, marginTop: 1 }}>{x.l}</Text>
+            <Text style={{ color: tint(t, x.c).ink, fontSize: 12, fontWeight: '700', marginTop: 1 }}>{x.l}</Text>
           </Card>
         ))}
       </View>
@@ -124,7 +124,7 @@ export function SettingsScreen() {
 
       <SectionTitle>알림</SectionTitle>
       <Card style={st.group}>
-        <ListRow icon="notifications" iconBg="#F03E3E" title="할 일 알림" desc="알림을 켠 할 일을 시간에 맞춰 알려줘요"
+        <ListRow icon="notifications" iconBg="#A8335E" title="할 일 알림" desc="알림을 켠 할 일을 시간에 맞춰 알려줘요"
           right={sw(s.notifications, async (v) => {
             if (v && !(await requestPermission()) && Platform.OS !== 'web') Alert.alert('알림 권한이 꺼져 있어요', '휴대폰 설정에서 알림을 허용해 주세요.');
             updateSettings({ notifications: v });
@@ -142,10 +142,10 @@ export function SettingsScreen() {
 
       <SectionTitle>보안</SectionTitle>
       <Card style={st.group}>
-        <ListRow icon="lock-closed" iconBg="#495057" title="PIN 잠금" desc={s.pinEnabled ? '앱을 열 때 PIN이 필요해요' : '다른 사람이 앱을 열지 못하게 잠가요'}
+        <ListRow icon="lock-closed" iconBg="#5B45B8" title="PIN 잠금" desc={s.pinEnabled ? '앱을 열 때 PIN이 필요해요' : '다른 사람이 앱을 열지 못하게 잠가요'}
           last={!s.pinEnabled}
           right={sw(s.pinEnabled, (v) => setPinFlow(v ? { step: 'new', then: 'set' } : { step: 'verify', then: 'off' }))} />
-        {s.pinEnabled && <ListRow icon="keypad" iconBg="#868E96" title="PIN 변경" last onPress={() => setPinFlow({ step: 'verify', then: 'set' })} />}
+        {s.pinEnabled && <ListRow icon="keypad" iconBg="#5A5560" title="PIN 변경" last onPress={() => setPinFlow({ step: 'verify', then: 'set' })} />}
       </Card>
       <Text style={[st.foot, { color: t.faint }]}>
         모든 데이터는 이 기기에만 저장되며 외부로 전송되지 않아요. 광고·추적 도구가 없고, PIN은 기기 보안 저장소에 암호화된 해시로만 보관돼요.
@@ -153,9 +153,9 @@ export function SettingsScreen() {
 
       <SectionTitle>데이터</SectionTitle>
       <Card style={st.group}>
-        <ListRow icon="share-outline" iconBg="#1098AD" title="백업 내보내기" desc="메신저·메일·메모 앱에 백업을 저장해요" onPress={exportData} />
-        <ListRow icon="download-outline" iconBg="#2B9A66" title="백업 불러오기" desc="저장해 둔 백업 텍스트로 복원해요" onPress={() => setImportOpen(true)} />
-        <ListRow icon="trash-outline" iconBg="#E03131" title="모든 데이터 초기화" last onPress={reset} />
+        <ListRow icon="share-outline" iconBg="#2A5FA8" title="백업 내보내기" desc="메신저·메일·메모 앱에 백업을 저장해요" onPress={exportData} />
+        <ListRow icon="download-outline" iconBg="#1F7A55" title="백업 불러오기" desc="저장해 둔 백업 텍스트로 복원해요" onPress={() => setImportOpen(true)} />
+        <ListRow icon="trash-outline" iconBg="#A8335E" title="모든 데이터 초기화" last onPress={reset} />
       </Card>
 
       <Text style={{ color: t.faint, fontSize: 12, textAlign: 'center', marginTop: 28 }}>

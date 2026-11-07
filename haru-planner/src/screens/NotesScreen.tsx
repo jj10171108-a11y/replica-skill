@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 import { Alert, FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { formatDue } from '../date';
 import { uid, useStore } from '../store';
-import { NOTE_COLORS, noteBg, useTheme } from '../theme';
+import { NOTE_COLORS, noteBg, normalizeNoteColor, useTheme } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Note } from '../types';
 import { DatePickerSheet } from '../components/Pickers';
@@ -42,7 +42,7 @@ function NoteEditor({ initial, onClose }: { initial: Note; onClose: () => void }
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
           {NOTE_COLORS.map((c) => (
             <Pressable key={c} onPress={() => { tap(); setN({ ...n, color: c }); }}
-              style={[st.swatch, { backgroundColor: noteBg(t, c), borderColor: noteBg(t, n.color) === noteBg(t, c) ? t.primary : t.border, borderWidth: noteBg(t, n.color) === noteBg(t, c) ? 2.5 : 1 }]} />
+              style={[st.swatch, { backgroundColor: noteBg(t, c), borderColor: normalizeNoteColor(n.color) === c ? t.primary : t.border, borderWidth: normalizeNoteColor(n.color) === c ? 2.5 : 1 }]} />
           ))}
         </View>
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
@@ -62,7 +62,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [cur, setCur] = useState<Note | null>(null);
   const open = useCallback((p?: Partial<Note>) => {
     const existing = p?.id ? data.notes.find((x) => x.id === p.id) : undefined;
-    setCur(existing ?? { id: uid(), title: '', body: '', date: null, color: NOTE_COLORS[0], pinned: false, updatedAt: Date.now(), ...p });
+    setCur(existing ?? { id: uid(), title: '', body: '', date: null, color: NOTE_COLORS[4], pinned: false, updatedAt: Date.now(), ...p });
   }, [data.notes]);
   return (
     <NoteCtx.Provider value={open}>

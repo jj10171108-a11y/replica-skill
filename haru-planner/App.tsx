@@ -3,7 +3,7 @@ import { ActivityIndicator, AppState, Linking, Pressable, StyleSheet, Text, useC
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StoreProvider, useStore } from './src/store';
-import { dark, light, ThemeContext, useTheme } from './src/theme';
+import { cardShadow, dark, light, ThemeContext, useTheme } from './src/theme';
 import { EditorProvider, useEditor } from './src/components/TaskEditor';
 import { PortalProvider } from './src/components/portal';
 import { todayKey } from './src/date';
@@ -33,16 +33,20 @@ function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View style={[st.tabBar, { backgroundColor: t.card, borderTopColor: t.separator, paddingBottom: Math.max(insets.bottom, 8) }]}>
-      {TABS.map((x) => {
-        const on = x.key === tab;
-        return (
-          <Pressable key={x.key} style={st.tabItem} onPress={() => { tap(); onChange(x.key); }} accessibilityRole="tab" accessibilityState={{ selected: on }}>
-            <Ionicons name={on ? x.iconOn : x.icon} size={23} color={on ? t.primary : t.faint} />
-            <Text style={{ fontSize: 11, marginTop: 3, color: on ? t.primary : t.sub, fontWeight: on ? '700' : '500' }}>{x.label}</Text>
-          </Pressable>
-        );
-      })}
+    <View style={{ backgroundColor: t.bg, paddingHorizontal: 14, paddingTop: 6, paddingBottom: Math.max(insets.bottom, 10) }}>
+      <View style={[st.tabBar, { backgroundColor: t.card }, cardShadow(t), t.dark && { borderWidth: 1, borderColor: t.border }]}>
+        {TABS.map((x) => {
+          const on = x.key === tab;
+          return (
+            <Pressable key={x.key} style={st.tabItem} onPress={() => { tap(); onChange(x.key); }} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={x.label}>
+              <View style={[st.tabPill, on && { backgroundColor: t.primarySoft }]}>
+                <Ionicons name={on ? x.iconOn : x.icon} size={22} color={on ? t.primaryInk : t.faint} />
+              </View>
+              <Text style={{ fontSize: 11, marginTop: 2, color: on ? t.primaryInk : t.faint, fontWeight: on ? '700' : '500' }}>{x.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -170,6 +174,7 @@ export default function App() {
 
 const st = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  tabBar: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 6 },
+  tabBar: { flexDirection: 'row', borderRadius: 28, paddingVertical: 8, paddingHorizontal: 4 },
+  tabPill: { width: 52, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   tabItem: { flex: 1, alignItems: 'center', paddingTop: 2 },
 });

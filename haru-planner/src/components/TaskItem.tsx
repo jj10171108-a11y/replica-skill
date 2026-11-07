@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDue, formatTime, todayKey } from '../date';
-import { priorityColor, useTheme } from '../theme';
+import { cardShadow, tint, useTheme } from '../theme';
 import { Goal, Project, Task } from '../types';
 import { IconName, tap } from './ui';
 
@@ -21,80 +21,74 @@ function Meta({ icon, text, color }: { icon?: IconName; text: string; color: str
   );
 }
 
-function TaskItemImpl({ task, project, goal, onToggle, onPress, onLongPress, hideDate, position = 'single' }: {
+function TaskItemImpl({ task, project, goal, onToggle, onPress, onLongPress, hideDate }: {
   task: Task; project?: Project; goal?: Goal; onToggle: (id: string) => void; onPress: (t: Task) => void;
   onLongPress?: (t: Task) => void; hideDate?: boolean; position?: RowPosition;
 }) {
   const t = useTheme();
-  const pc = priorityColor(t, task.priority);
   const overdue = !task.done && task.due !== null && task.due < todayKey();
   const subDone = task.subtasks.filter((s) => s.done).length;
-  const top = position === 'single' || position === 'first';
-  const bottom = position === 'single' || position === 'last';
+  // 프로젝트가 있으면 그 파스텔 색 카드, 없으면 흰 카드
+  const p = project ? tint(t, project.color) : null;
+  const bg = task.done ? t.card : p ? p.bg : t.card;
+  const ink = p ? p.ink : t.primaryInk;
+  const metaColor = t.sub;
+  const hasMeta = (task.due && !hideDate) || (task.time && hideDate) || task.repeat !== 'none' || task.subtasks.length || task.remind || task.note || project || goal;
 
   return (
-    <View style={[st.wrap, { marginBottom: bottom ? 10 : 0 }]}>
+    <Pressable
+      onPress={() => onPress(task)}
+      onLongPress={onLongPress ? () => { tap(); onLongPress(task); } : undefined}
+      style={({ pressed }) => [
+        st.card,
+        { backgroundColor: bg, opacity: task.done ? 0.7 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] },
+        !p || task.done ? cardShadow(t) : null,
+      ]}
+    >
       <Pressable
-        onPress={() => onPress(task)}
-        onLongPress={onLongPress ? () => { tap(); onLongPress(task); } : undefined}
-        style={({ pressed }) => [
-          st.row,
-          { backgroundColor: pressed ? t.fill : t.card },
-          top && st.top,
-          bottom && st.bottom,
-        ]}
+        onPress={() => { tap(); onToggle(task.id); }}
+        hitSlop={12}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: task.done }}
+        accessibilityLabel={task.title}
+        style={[st.check, { borderColor: task.done ? t.success : task.priority === 3 ? t.danger : ink, backgroundColor: task.done ? t.success : t.dark ? 'transparent' : 'rgba(255,255,255,0.7)' }]}
       >
-        <Pressable
-          onPress={() => { tap(); onToggle(task.id); }}
-          hitSlop={12}
-          accessibilityRole="checkbox"
-          accessibilityState={{ checked: task.done }}
-          accessibilityLabel={task.title}
-          style={[st.check, { borderColor: task.done ? t.primary : task.priority ? pc : t.faint, backgroundColor: task.done ? t.primary : 'transparent' }]}
-        >
-          {task.done ? <Ionicons name="checkmark" size={14} color={t.onPrimary} /> : null}
-        </Pressable>
-        <View style={[st.body, !bottom && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.separator }]}>
-          <View style={{ flex: 1 }}>
-            <Text
-              numberOfLines={2}
-              style={{ color: task.done ? t.faint : t.text, fontSize: 15.5, fontWeight: '500', lineHeight: 21, textDecorationLine: task.done ? 'line-through' : 'none' }}
-            >
-              {task.title}
-            </Text>
-            <View style={[st.meta, !(task.due && !hideDate) && !(task.time && hideDate) && task.repeat === 'none' && !task.subtasks.length && !task.remind && !task.note && !project && !goal && { marginTop: 0 }]}>
-              {task.due && !hideDate ? <Meta icon="calendar-clear-outline" text={formatDue(task.due, task.time)} color={overdue ? t.danger : t.sub} /> : null}
-              {task.time && hideDate ? <Meta icon="time-outline" text={formatTime(task.time)} color={t.sub} /> : null}
-              {task.repeat !== 'none' ? <Meta icon="repeat" text={REPEAT_LABEL[task.repeat]} color={t.sub} /> : null}
-              {task.subtasks.length ? <Meta icon="list" text={`${subDone}/${task.subtasks.length}`} color={t.sub} /> : null}
-              {task.remind ? <Meta icon="notifications-outline" text="" color={t.sub} /> : null}
-              {task.note ? <Meta icon="document-text-outline" text="" color={t.sub} /> : null}
-              {project ? (
-                <View style={st.metaItem}>
-                  <View style={[st.projDot, { backgroundColor: project.color }]} />
-                  <Text style={{ color: t.sub, fontSize: 12 }} numberOfLines={1}>{project.name}</Text>
-                </View>
-              ) : null}
-              {goal ? <Meta icon="flag-outline" text={goal.title} color={t.sub} /> : null}
-            </View>
-          </View>
-          {task.priority === 3 && !task.done ? <Ionicons name="flag" size={14} color={t.danger} style={{ marginTop: 3 }} /> : null}
-        </View>
+        {task.done ? <Ionicons name="checkmark" size={15} color={t.dark ? t.bg : '#fff'} /> : null}
       </Pressable>
-    </View>
+      <View style={{ flex: 1 }}>
+        <Text
+          numberOfLines={2}
+          style={{ color: task.done ? t.faint : t.text, fontSize: 16, fontWeight: '600', lineHeight: 22, textDecorationLine: task.done ? 'line-through' : 'none' }}
+        >
+          {task.title}
+        </Text>
+        {hasMeta ? (
+          <View style={st.meta}>
+            {task.due && !hideDate ? <Meta icon="calendar-clear-outline" text={formatDue(task.due, task.time)} color={overdue ? t.danger : metaColor} /> : null}
+            {task.time && hideDate ? <Meta icon="time-outline" text={formatTime(task.time)} color={metaColor} /> : null}
+            {task.repeat !== 'none' ? <Meta icon="repeat" text={REPEAT_LABEL[task.repeat]} color={metaColor} /> : null}
+            {task.subtasks.length ? <Meta icon="list" text={`${subDone}/${task.subtasks.length}`} color={metaColor} /> : null}
+            {task.remind ? <Meta icon="notifications-outline" text="" color={metaColor} /> : null}
+            {task.note ? <Meta icon="document-text-outline" text="" color={metaColor} /> : null}
+            {goal ? <Meta icon="flag-outline" text={goal.title} color={metaColor} /> : null}
+          </View>
+        ) : null}
+      </View>
+      {project ? (
+        <View style={[st.tag, { backgroundColor: t.dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.75)' }]}>
+          <Text style={{ color: ink, fontSize: 12, fontWeight: '700' }} numberOfLines={1}>{project.emoji} {project.name}</Text>
+        </View>
+      ) : task.priority === 3 && !task.done ? <Ionicons name="flag" size={15} color={t.danger} /> : null}
+    </Pressable>
   );
 }
 
 export const TaskItem = memo(TaskItemImpl);
 
 const st = StyleSheet.create({
-  wrap: { marginHorizontal: 16 },
-  row: { flexDirection: 'row', alignItems: 'flex-start', paddingLeft: 14 },
-  top: { borderTopLeftRadius: 16, borderTopRightRadius: 16 },
-  bottom: { borderBottomLeftRadius: 16, borderBottomRightRadius: 16 },
-  check: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.8, alignItems: 'center', justifyContent: 'center', marginTop: 14, marginRight: 12 },
-  body: { flex: 1, flexDirection: 'row', paddingVertical: 13, paddingRight: 14, gap: 8 },
-  meta: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 2, marginTop: 3 },
+  card: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 16, marginBottom: 10, paddingHorizontal: 16, paddingVertical: 15, borderRadius: 22 },
+  check: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  meta: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 2, marginTop: 4 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  projDot: { width: 7, height: 7, borderRadius: 4 },
+  tag: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, maxWidth: 110 },
 });

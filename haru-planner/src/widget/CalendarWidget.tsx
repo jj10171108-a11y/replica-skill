@@ -5,14 +5,14 @@ import { formatTime } from '../date';
 import { WidgetModel } from './model';
 
 const LIGHT = {
-  bg: '#FFFFFF' as HexColor, text: '#181A23' as HexColor, sub: '#676B7E' as HexColor, faint: '#B9BCC9' as HexColor,
-  primary: '#4263EB' as HexColor, onPrimary: '#FFFFFF' as HexColor, soft: '#EDF1FE' as HexColor,
-  danger: '#E03131' as HexColor, blue: '#4263EB' as HexColor, warn: '#E8930C' as HexColor, line: '#ECEDF3' as HexColor,
+  bg: '#FFFDF9' as HexColor, text: '#221E2E' as HexColor, sub: '#6A6475' as HexColor, faint: '#B4AEBC' as HexColor,
+  primary: '#6E56CF' as HexColor, onPrimary: '#FFFFFF' as HexColor, soft: '#EEEAFD' as HexColor,
+  danger: '#C92A2A' as HexColor, blue: '#3A63C4' as HexColor, warn: '#A84B24' as HexColor, line: '#F0ECE6' as HexColor,
 };
 const DARK: typeof LIGHT = {
-  bg: '#15161B' as HexColor, text: '#F0F1F6' as HexColor, sub: '#9DA1B4' as HexColor, faint: '#545869' as HexColor,
-  primary: '#7C93FF' as HexColor, onPrimary: '#0E0F14' as HexColor, soft: '#252846' as HexColor,
-  danger: '#FF6B70' as HexColor, blue: '#7C93FF' as HexColor, warn: '#F5A524' as HexColor, line: '#2A2D3A' as HexColor,
+  bg: '#1B1A22' as HexColor, text: '#EEECF4' as HexColor, sub: '#A29DB0' as HexColor, faint: '#5E5A6B' as HexColor,
+  primary: '#A594F9' as HexColor, onPrimary: '#17141F' as HexColor, soft: '#2A2446' as HexColor,
+  danger: '#FF7A85' as HexColor, blue: '#8DB4FF' as HexColor, warn: '#FFB59A' as HexColor, line: '#2D2B37' as HexColor,
 };
 
 const uri = (path: string) => ({ clickAction: 'OPEN_URI', clickActionData: { uri: `haruplanner://${path}` } });
@@ -36,7 +36,7 @@ export function CalendarWidget({ model, dark, width, height }: { model: WidgetMo
   const dayFont = small ? 12 : 14;
 
   return (
-    <FlexWidget style={{ height: 'match_parent', width: 'match_parent', backgroundColor: c.bg, borderRadius: 24, padding: 12, flexDirection: 'column' }}>
+    <FlexWidget style={{ height: 'match_parent', width: 'match_parent', backgroundColor: c.bg, borderRadius: 28, padding: 14, flexDirection: 'column' }}>
       {/* 헤더 */}
       <FlexWidget style={{ width: 'match_parent', flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
         <FlexWidget {...uri('calendar')} style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>

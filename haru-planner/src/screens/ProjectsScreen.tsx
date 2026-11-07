@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { diffDays, formatDue, todayKey } from '../date';
 import { uid, useStore } from '../store';
-import { PALETTE, useTheme } from '../theme';
+import { PALETTE, PASTELS, tint, useTheme } from '../theme';
 import { Goal, Project, Task } from '../types';
 import { positionOf, TaskItem } from '../components/TaskItem';
 import { Ionicons } from '@expo/vector-icons';
@@ -47,7 +47,7 @@ function ProjectForm({ initial, onClose }: { initial: Project; onClose: () => vo
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
         {PALETTE.map((c) => (
           <Pressable key={c} onPress={() => { tap(); setP({ ...p, color: c }); }}
-            style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: c, borderWidth: p.color === c ? 3 : 0, borderColor: t.text }} />
+            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: tint(t, c).bg, borderWidth: p.color.toUpperCase() === c ? 3 : 1, borderColor: p.color.toUpperCase() === c ? tint(t, c).ink : t.border }} />
         ))}
       </View>
       <Button label={isNew ? '프로젝트 만들기' : '저장'} disabled={!p.name.trim()} onPress={() => { saveProject({ ...p, name: p.name.trim() }); onClose(); }} style={{ marginTop: 24 }} />
@@ -147,16 +147,16 @@ export function ProjectsScreen() {
             {data.projects.map((p) => {
               const s = stats.projects[p.id];
               return (
-                <Card key={p.id} onPress={() => setDetail({ kind: 'project', id: p.id })} onLongPress={() => setPForm(p)}>
+                <Card key={p.id} onPress={() => setDetail({ kind: 'project', id: p.id })} onLongPress={() => setPForm(p)} style={{ backgroundColor: tint(t, p.color).bg, shadowOpacity: 0, elevation: 0 }}>
                   <View style={st.rowCard}>
-                    <View style={[st.icon, { backgroundColor: p.color + (t.dark ? '2E' : '17') }]}><Text style={{ fontSize: 22 }}>{p.emoji}</Text></View>
+                    <View style={[st.icon, { backgroundColor: t.dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.85)' }]}><Text style={{ fontSize: 22 }}>{p.emoji}</Text></View>
                     <View style={{ flex: 1 }}>
                       <Text style={[st.cardTitle, { color: t.text }]}>{p.name}</Text>
                       <Text style={{ color: t.sub, fontSize: 13 }}>남은 일 {s.open}개 · 완료 {s.done}개</Text>
                     </View>
-                    <Text style={{ color: p.color, fontWeight: '800' }}>{s.total ? Math.round((s.done / s.total) * 100) : 0}%</Text>
+                    <Text style={{ color: tint(t, p.color).ink, fontWeight: '800', fontSize: 17 }}>{s.total ? Math.round((s.done / s.total) * 100) : 0}%</Text>
                   </View>
-                  <View style={{ marginTop: 14 }}><Progress value={s.total ? s.done / s.total : 0} color={p.color} height={5} /></View>
+                  <View style={{ marginTop: 14 }}><Progress value={s.total ? s.done / s.total : 0} color={tint(t, p.color).ink} track={t.dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.85)'} height={6} /></View>
                 </Card>
               );
             })}
@@ -165,22 +165,23 @@ export function ProjectsScreen() {
           </View>
         ) : (
           <View style={{ paddingHorizontal: 16, gap: 10 }}>
-            {data.goals.map((g) => {
+            {data.goals.map((g, gi) => {
               const s = stats.goals[g.id];
+              const gp = tint(t, PASTELS[(gi + 3) % PASTELS.length].light.ink);
               const left = g.deadline ? diffDays(g.deadline, today) : null;
               return (
-                <Card key={g.id} onPress={() => setDetail({ kind: 'goal', id: g.id })} onLongPress={() => setGForm(g)}>
+                <Card key={g.id} onPress={() => setDetail({ kind: 'goal', id: g.id })} onLongPress={() => setGForm(g)} style={{ backgroundColor: gp.bg, shadowOpacity: 0, elevation: 0 }}>
                   <View style={st.rowCard}>
-                    <View style={[st.icon, { backgroundColor: t.primarySoft }]}><Text style={{ fontSize: 21 }}>{g.emoji}</Text></View>
+                    <View style={[st.icon, { backgroundColor: t.dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.85)' }]}><Text style={{ fontSize: 21 }}>{g.emoji}</Text></View>
                     <View style={{ flex: 1 }}>
                       <Text style={[st.cardTitle, { color: t.text }]}>{g.title}</Text>
                       <Text style={{ color: left !== null && left < 0 ? t.danger : t.sub, fontSize: 13 }}>
                         {left === null ? '기한 없음' : left > 0 ? `D-${left}` : left === 0 ? 'D-Day' : `${-left}일 지남`} · 완료 {s.done}/{s.total}
                       </Text>
                     </View>
-                    <Text style={{ color: t.primary, fontWeight: '800', fontSize: 16 }}>{s.total ? Math.round((s.done / s.total) * 100) : 0}%</Text>
+                    <Text style={{ color: gp.ink, fontWeight: '800', fontSize: 17 }}>{s.total ? Math.round((s.done / s.total) * 100) : 0}%</Text>
                   </View>
-                  <View style={{ marginTop: 14 }}><Progress value={s.total ? s.done / s.total : 0} height={5} /></View>
+                  <View style={{ marginTop: 14 }}><Progress value={s.total ? s.done / s.total : 0} color={gp.ink} track={t.dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.85)'} height={6} /></View>
                 </Card>
               );
             })}
@@ -228,7 +229,7 @@ export function ProjectsScreen() {
 
 const st = StyleSheet.create({
   rowCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  icon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
   emoji: { width: 46, height: 46, borderRadius: 14, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 });

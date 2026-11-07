@@ -19,8 +19,8 @@ export const defaultSettings: Settings = {
 
 const seed = (): AppData => {
   const now = Date.now();
-  const personal: Project = { id: uid(), name: '개인', emoji: '🏠', color: '#2F9E6A', createdAt: now };
-  const work: Project = { id: uid(), name: '업무', emoji: '💼', color: '#4F5BD5', createdAt: now + 1 };
+  const personal: Project = { id: uid(), name: '개인', emoji: '🏠', color: '#1F7A55', createdAt: now };
+  const work: Project = { id: uid(), name: '업무', emoji: '💼', color: '#2A5FA8', createdAt: now + 1 };
   const goal: Goal = { id: uid(), title: '꾸준히 운동하기', emoji: '🏃', deadline: null, createdAt: now };
   const base = { note: '', goalId: null, time: null, repeat: 'none' as const, remind: false, subtasks: [], done: false, doneAt: null };
   return {
@@ -34,7 +34,7 @@ const seed = (): AppData => {
         subtasks: [{ id: uid(), title: '지난주 회의록 확인', done: false }, { id: uid(), title: '안건 정리', done: false }] },
     ],
     notes: [
-      { id: uid(), title: '메모 사용법', body: '메모에 날짜를 연결하면 캘린더에서도 볼 수 있어요.\n중요한 메모는 고정해 두세요.', date: todayKey(), color: '#FFF4C2', pinned: true, updatedAt: now },
+      { id: uid(), title: '메모 사용법', body: '메모에 날짜를 연결하면 캘린더에서도 볼 수 있어요.\n중요한 메모는 고정해 두세요.', date: todayKey(), color: '#FFF2C7', pinned: true, updatedAt: now },
     ],
     settings: defaultSettings,
   };
@@ -65,13 +65,13 @@ export function normalize(raw: any): AppData {
       createdAt: typeof t.createdAt === 'number' ? t.createdAt : Date.now(),
     })),
     projects: (Array.isArray(raw.projects) ? raw.projects : []).map((p: any): Project => ({
-      id: str(p.id, uid()), name: str(p.name, '프로젝트'), emoji: str(p.emoji, '📁'), color: str(p.color, '#4F5BD5'), createdAt: p.createdAt ?? Date.now(),
+      id: str(p.id, uid()), name: str(p.name, '프로젝트'), emoji: str(p.emoji, '📁'), color: str(p.color, '#5B45B8'), createdAt: p.createdAt ?? Date.now(),
     })),
     goals: (Array.isArray(raw.goals) ? raw.goals : []).map((g: any): Goal => ({
       id: str(g.id, uid()), title: str(g.title, '목표'), emoji: str(g.emoji, '⭐'), deadline: dateOrNull(g.deadline), createdAt: g.createdAt ?? Date.now(),
     })),
     notes: (Array.isArray(raw.notes) ? raw.notes : []).map((n: any): Note => ({
-      id: str(n.id, uid()), title: str(n.title), body: str(n.body), date: dateOrNull(n.date), color: str(n.color, '#FFF4C2'), pinned: !!n.pinned, updatedAt: n.updatedAt ?? Date.now(),
+      id: str(n.id, uid()), title: str(n.title), body: str(n.body), date: dateOrNull(n.date), color: str(n.color, '#FFF2C7'), pinned: !!n.pinned, updatedAt: n.updatedAt ?? Date.now(),
     })),
     settings: { ...defaultSettings, ...(raw.settings || {}) },
   };
