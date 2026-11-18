@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "하루 가계부",
+    "slug": "haru-money",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.haru.money"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#6E56CF",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.haru.money"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sharing",
+      "expo-font",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "앱 잠금을 풀 때 Face ID를 사용해요."
+        }
+      ],
+      "expo-notifications"
+    ],
+    "scheme": "harumoney"
+  }
+}
