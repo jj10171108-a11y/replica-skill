@@ -85,6 +85,10 @@ nav button.on{color:var(--accent)}
 .toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%);background:var(--ink);color:var(--bg);
   padding:10px 16px;border-radius:99px;font-size:14px;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
+.ask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:30;display:grid;place-items:center;padding:24px}
+.ask-card{background:var(--card);border-radius:18px;padding:20px;max-width:340px;width:100%}
+.ask-card p{margin:0 0 16px;line-height:1.5}
+.btn.danger-fill{background:var(--out);color:#fff}
 .install{background:var(--accent-soft);border-radius:14px;padding:12px 14px;font-size:14px;margin-top:8px}
 </style>
 </head>
@@ -131,6 +135,14 @@ const catIcon = (type, c) => (CATS[type].find(x => x[0] === c) || ['','📦'])[1
 const pct = (a, b) => b > 0 ? Math.min(100, Math.max(0, a / b * 100)) : 0;
 const $ = s => document.querySelector(s);
 
+function ask(msg, yes){
+  return new Promise(res => {
+    const box = document.createElement('div'); box.className = 'ask';
+    box.innerHTML = `<div class="ask-card"><p>${esc(msg)}</p><div class="actions"><button class="btn ghost" data-a="0">취소</button><button class="btn danger-fill" data-a="1">${esc(yes)}</button></div></div>`;
+    box.onclick = e => { const b = e.target.closest('[data-a]'); if (!b && e.target !== box) return; box.remove(); res(!!b && b.dataset.a === '1'); };
+    document.body.appendChild(box);
+  });
+}
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 1800); }
 
 /* ---------- derived numbers ---------- */
@@ -348,7 +360,7 @@ function bindForm(f, onSave, onDel){
   f.onsubmit = e => { e.preventDefault(); onSave(); };
   f.querySelector('[data-close]').onclick = closeSheet;
   const del = f.querySelector('[data-del]');
-  if (del) del.onclick = () => { if (confirm('삭제할까요?')) onDel(); };
+  if (del) del.onclick = async () => { if (await ask('삭제할까요?', '삭제')) onDel(); };
   const first = f.querySelector('input[data-money]');
   if (first && !first.value) setTimeout(() => first.focus(), 260);
 }
@@ -377,7 +389,7 @@ $('#view').addEventListener('click', e => {
   if (ed) return ed.dataset.edit === 'tx' ? txForm(ed.dataset.id) : simpleForm(ed.dataset.edit, ed.dataset.id);
   if (t.id === 'export') return exportData();
   if (t.id === 'import') return $('#file').click();
-  if (t.id === 'reset' && confirm('모든 데이터를 삭제할까요? 되돌릴 수 없어요.')){ S = blank(); save(); render(); toast('초기화했어요'); }
+  if (t.id === 'reset') ask('모든 데이터를 삭제할까요? 되돌릴 수 없어요.', '모두 삭제').then(ok => { if (ok){ S = blank(); save(); render(); toast('초기화했어요'); } });
 });
 $('#view').addEventListener('change', e => { if (e.target.id === 'file' && e.target.files[0]) importData(e.target.files[0]); });
 $('#fab').onclick = () => {
@@ -399,11 +411,11 @@ async function exportData(){
 }
 function importData(file){
   const r = new FileReader();
-  r.onload = () => {
+  r.onload = async () => {
     try {
       const j = JSON.parse(r.result); const d = j.data || j;
       if (!Array.isArray(d.tx)) throw 0;
-      if (!confirm('지금 데이터를 백업 파일 내용으로 바꿀까요?')) return;
+      if (!(await ask('지금 데이터를 백업 파일 내용으로 바꿀까요?', '바꾸기'))) return;
       S = Object.assign(blank(), d); save(); render(); toast('불러왔어요');
     } catch(e){ toast('올바른 백업 파일이 아니에요'); }
   };
